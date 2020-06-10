@@ -66,6 +66,7 @@ Module.register("MMM-Provider-JSON", {
 							// if no key is included and any field is flagged as sorting, even if first field, then the key field is flagged as sort
 
 		waitforqueuetime: 0010, //don't change this - it simply helps the queue processor to run with a controlled internal loop
+		filename:null,		//if set, the output data is also stored to this filename
 	},
 
 	start: function () {

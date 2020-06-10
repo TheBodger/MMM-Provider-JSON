@@ -108,18 +108,23 @@ module.exports = NodeHelper.create({
 		//add an outputname if not specified
 		//find any sort values and populate the sort control arrays
 		//if key not specified then make first field the key field
+		//if inputtype not set make it 's'
+		
 		var keyfound = false;
 		var sorting = false;
 		var sortkeys = [];
 
-		//and 
-
 		config.fields.forEach(function (field, index) {
+
 			if (field.outputname == null) { tempconfig.fields[index]['outputname'] = fieldname;}
 			if (field.sort) {
 				sorting = true;
 				sortkeys.push(tempconfig.fields[index]['outputname'])
 			}
+
+			if (field.fieldtype == null) {
+				tempconfig.fields[index].fieldtype = 's'; 
+            }
 
 		})
 
@@ -133,7 +138,7 @@ module.exports = NodeHelper.create({
 		}
 
 		tempconfig[sorting] = sorting;
-
+		tempconfig[sortkeys] = sortkeys;
 
 		//fields: [],		// an array of field definitions 
 							// field definitions are in the format of (|entry is optional|)
@@ -157,9 +162,6 @@ module.exports = NodeHelper.create({
 		tempconfig.errordescription = 'info';
 
 		tempconfig.rootkey = config.baseaddress;
-
-		//add a error location just in case
-
 
 		//store a local copy so we dont have keep moving it about
 
@@ -236,14 +238,14 @@ module.exports = NodeHelper.create({
 
 		JSONconfig['callback'] = function (JSONconfig, inputjson) {
 
-			var jsonerror = utilities.getkeyedJSON(inputjson, tempconfig.errorkey); 
+			var jsonerror = utilities.getkeyedJSON(inputjson, JSONconfig.config.errorkey); 
 
-			var jsonarray = utilities.getkeyedJSON(inputjson, tempconfig.rootkey);
+			var jsonarray = utilities.getkeyedJSON(inputjson, JSONconfig.config.rootkey);
 
 			//check to see if we have an actual error to report
 
 			if (jsonerror != null) {
-				console.error(jsonerror[tempconfig.errorcode], jsonerror[tempconfig.errordescription]);
+				console.error(jsonerror[JSONconfig.config.errorcode], jsonerror[JSONconfig.config.errordescription]);
 			}
 
 			//check it actually contains something, assuming if empty it is in error
@@ -326,12 +328,12 @@ module.exports = NodeHelper.create({
 
 	},
 
-	//now to the core of the system, where there are most different to the feedprovider modules
-	//we enter this for each of the financefeeds we want to create to send back for later processing
 
 	processfeed: function (feed, moduleinstance, providerid, feedidx, jsonarray) {
 
 		//we process the JSON  here / 1 dataset
+
+		const config = providerstorage[moduleinstance].config;
 
 		var sourcetitle = feed.sourcetitle;
 
@@ -341,165 +343,61 @@ module.exports = NodeHelper.create({
 
 		for (var idx = 0; idx < jsonarray.length; idx++) {
 
-			//look for any key value pairs required and create an item
-			//ignore any items that are older than the max feed date
-			//code specialised for handling the yahoo v8 chart feed
+			var processthisitem = true; //drop items not meeting any validation rules
+			var tempitem = {object:config.id};
 
-			var processthisitem = true;
-			var errcounter = 0;
+			const item = jsonarray[idx];
 
-			var mainitem = new structures.NDTFItem()
+			for (var field in config.fields) {
 
-			// the subject is common for this feed as it should be the stock
+			//depending on the field type we need to validate and convert
 
-			if (feed.feedconfig.subject != null) {
+				var validatedfield = self.validateconvertfield(field, utilities.getkeyedJSON(item, field.address + '.' + field.fieldname));//extract using a dotnotation key
 
-				if (feed.feedconfig.subject == 'stock') {
-
-					//check if we use provided names instead of the actual ticker
-					if (feed.feedconfig.usenames) {
-						mainitem.subject = feed.stockname;
+				if (validatedfield.valid) {
+					if (field.key) {
+						tempitem['subject'] = validatedfield.value;
 					}
 					else {
-						mainitem.subject = feed.stock;
+						tempitem[field.outputname] = validatedfield.value;
 					}
 				}
-
 				else {
-					mainitem.subject = utilities.getkeyedJSON(jsonarray[idx], feed.feedconfig.subject);;
-				}
+					processthisitem = false;
+                }
 
 			}
-			else {
-				config.info("No subject");
-				processthisitem = false;
-			}
-
-			//console.info(errcounter++, processthisitem);
-
-			//determine which of the objects to process, using the dot notation keys
-
-			if (feed.feedconfig.object != null) {
-
-				mainitem.object = feed.feedconfig.object
-
-			}
-			else {
-				config.info("No object");
-				processthisitem = false;
-			}
-
-			//console.info(errcounter++, processthisitem);
-
-			if (feed.feedconfig.value != null) {
-
-				var valuearray = utilities.getkeyedJSON(jsonarray[idx], feed.feedconfig.value);
-
-			}
-			else {
-				config.info("No value");
-				processthisitem = false;
-			}
-
-			//console.info(errcounter++, processthisitem);
-
-			//now we have an array of values to process 
-			//but we are not pointing at a matching timestamp
-			//so we need to get them as well
-
-			if (feed.feedconfig.timestamp != null && !feed.feedconfig.useruntime) {
-
-				var timestamparray = utilities.getkeyedJSON(jsonarray[idx], feed.feedconfig.timestamp);
-
-			}
-
-			if (valuearray.length != timestamparray.length) {
-				console.error("Something wonderful has happened, it broke !! - array lengths not equal");
-				processthisitem = false;
-			}
-
-			//console.info(errcounter++, processthisitem);
-
-			//we should now have 2 matching arrays, values and timestamps, merge them into tempitems and send onwards
 
 			if (processthisitem) {
 
-				for (var aidx = 0; aidx < valuearray.length; aidx++) {
+				this.outputarray.push(tempitem);
 
-					processthisitem = true; //reset for each item
-
-					var tempitem = new structures.NDTFItem()
-
-					tempitem.subject = mainitem.subject;
-					tempitem.object = mainitem.object;
-
-					if (feed.feedconfig.usenumericoutput) {
-						if (isNaN(parseFloat(valuearray[aidx]))) {
-							console.error("Invalid numeric value: " + valuearray[aidx]);
-							processthisitem = false;
-						}
-						else {
-							tempitem.value = parseFloat(valuearray[aidx]);
-						}
-					}
-					else {
-						tempitem.value = valuearray[aidx];
-					}
-
-					//if the timestamp is requested do we have one of those as well
-					//removed all validation at the moment as this isn't generic 
-
-					//yahoo timestamps are seconds, so adjust to milliseconds
-
-					var temptimestamp = timestamparray[aidx];
-
-					if (temptimestamp != null) {
-
-						temptimestamp = new Date(temptimestamp * 1000);
-
-						maxfeeddate = new Date(Math.max(maxfeeddate, temptimestamp));
-
-						//console.info(temptimestamp, feed.latestfeedpublisheddate, tempitem.value);
-						//console.info(temptimestamp > feed.latestfeedpublisheddate);
-
-						if (temptimestamp > feed.latestfeedpublisheddate) {
-
-							tempitem.timestamp = temptimestamp;
-						}
-						else {
-							processthisitem = false;
-							//console.info("Too old");
-						} //too old
-
-					}
-					else { // use an offset timestamp
-						tempitem.timestamp = feed.feedconfig.adjustedruntime;
-					}
-
-					//we want to just capture any changes when looking for live updates (intraday) so this may need tweaking
-
-					//console.info(processthisitem);
-
-					if (processthisitem) {
-
-						this.outputarray[feedidx].push(tempitem);
-
-					}
-				}
 			}
-
+				
 		}  //end of process loop - input array
 
-		if (feed.feedconfig.filename == null) {
-			console.info("Extracted " + this.outputarray[feedidx].length + " stock records");
+		//do sorting
+
+		if (config.sorting) { //carry out multi level sort
+
+			var sortutility = new utilities.mergeutils();
+
+			sortutility.preparesort('sortme', outputarray[0], config.sortkeys, false);
+
+			outputarray = sortutility.sortset(outputarray);
+
+        }
+
+		if (config.filename == null) {
+			console.info("Extracted " + this.outputarray.length + " records");
 		}
 		else {
 
 			// write out to a file
 
-			JSONutils.putJSON("./" + feed.feedconfig.filename, this.outputarray[feedidx]);
+			JSONutils.putJSON("./" + config.filename, this.outputarray);
 
-			console.info("Extracted " + this.outputarray[feedidx].length + " stock records");
+			console.info("Extracted " + this.outputarray.length + " records");
 
 		}
 
@@ -512,6 +410,57 @@ module.exports = NodeHelper.create({
 
 		self.send(moduleinstance, providerid, rsssource, feedidx);
 		self.done();
+
+	},
+
+	validateconvertfield: function (fieldconfig, value) {
+
+		// fieldtype can be 'n', 's', 'b', 't'
+		// n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric 
+		// s = string, the input is converted to string if not string for output
+		// b = boolean, the input is converted to true/false for output
+		// t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
+		//	timestamp can includes a format to help the conversion of the input to the output
+
+		var result = { valid: true, value: value };
+
+		if (fieldconfig.type == 's' || value == null) { //if a string or null just pass it on
+			result.value = value.toString();
+			return result;
+		}
+
+		if (fieldconfig.type == 'n' && ( (typeof value) == "number" || !isNaN(parseFloat(value)) ) ) {
+			result.value = parseFloat(value);
+			return result;
+        } 
+
+		if (fieldconfig.type == 'b') {
+			if (typeof value == 'string' && (value.toLowerCase == 'false' || parseFloat(value) == 0)) {
+				result.value = false;
+			} else {
+				result.value = Boolean(value);
+			}
+			return result;
+		} 
+
+		if (fieldconfig.type == 't') {
+			if (fieldconfig.timestampformat == null) {
+				if (moment(value).isValid()) {
+					result.value = moment(value).toDate().getTime();
+					return result;
+				}
+			}
+			else {
+				if (moment(value,fieldconfig.timestampformat).isValid()) {
+					result.value = moment(value).toDate().getTime();
+					return result;
+				}
+			}
+		}
+
+		result.valid = false;
+		
+		return result;
 
 	},
 
