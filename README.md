@@ -1,10 +1,43 @@
-# MMM-ChartProvider-Finance
+# MMM-Provider-JSON
 
-This magic mirror module is a MMM-ChartProvider module that is part of the MMM-Chartxxx and MMM-Feedxxx interrelated modules.
+This magic mirror module is a MMM-Provider module that will extract specified data from a JSON feed and provide it to any requesting consumers in a standard format.
 
-For an overview of these modules see the README.md in https://github.com/TheBodger/MMM-ChartDisplay.
+The Output format is specified and can be a variation of the NDTF standard.
 
-the -Finance module reads data from the yahoo finance feeds and formats it into one of more NDTF standard feeds to one or more MMM-ChartDisplay consumers.
+1) Specify the feed including base URL, API keys
+2) Specify the rules to build the URL request portion
+3) Specify where the data of interest is (Dot notation), the type (Array,object), fields (dot notation) and data format if required (timestamp conversion to Date().gettime, string to numeric, etc) 
+4) The data is extracted and combined into base NDTF extended to (subject,object,timestamp,data values) - renamed accordingly: using codes that the display module will understand if neccessary (no data enhancement at this stage)
+	I.e {Airport:'BOS',object:'FlightDepartures',departuretimestamp:1912398713542,from:'BOS',to:'LHR',airline:'BA',remarks:'Delayed'}
+5) Data can be sorted before output by any output key
+
+Specifications:
+
+id:'', // the id of this extracted data that will be used in the object field of the output
+baseurl:'', //the fixed part of the url, can include insertable values {apikey} that will be taken from the named variables in the config, may also include defaults such as time or date 
+urlparams:{fieldname:fieldvalue}, // (i.e. {apikey:'jakhsdfasdkfjh9875t-987asdgwe'},
+baseaddress:'', //a dotnotation base entry level from which all other data addresses are defined
+itemtype:'array/object' // how the items to process are arranged within the input
+// if array, then each item is accessed via an index
+// if object, then each item is accessed via some other method to be determined
+fields:[], //an array of field definitions 
+//field definitions are in the format of (|entry is optional|)
+// {fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,outputname:''|,|sort:true|}}
+// fieldname is  the  fieldname of the input field in the input data
+// address is optional, if not specified then the data is extracted from the base address level
+// fieldtype can be 'n', 's', 'b', 't'
+// n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric 
+// s = string, the input is converted to string if not string for output
+// b = boolean, the input is converted to true/false for output
+// t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
+//	timestamp can includes a format to help the conversion of the input to the output
+// key indicates that this field should be used for the subject entry within the output, if not specificed then the first entry is the key, the key is the highest level to use if the data is sorted
+//outputname is the name to use for the field in output, if not specified the fieldname is used
+//sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array
+//
+
+## example defininition
+
 
 ### Example
 ![Example of MMM-ChartProvider-Finance output being displayed](images/screenshot.png?raw=true "Example screenshot")
@@ -24,7 +57,7 @@ To install the module, use your terminal to:
 
 ## Using the module
 
-### MagicMirror² Configuration
+### MagicMirrorÂ² Configuration
 
 To use this module, add the following minimum configuration block to the modules array in the `config/config.js` file:
 ```js
