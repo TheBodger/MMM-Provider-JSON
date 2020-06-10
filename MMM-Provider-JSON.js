@@ -63,6 +63,7 @@ Module.register("MMM-Provider-JSON", {
 							// key indicates that this field should be used for the subject entry within the output, if not specificed then the first entry is the key, the key is the highest level to use if the data is sorted
 							// outputname is the name to use for the field in output, if not specified the fieldname is used
 							// sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array
+							// if no key is included and any field is flagged as sorting, even if first field, then the key field is flagged as sort
 
 		waitforqueuetime: 0010, //don't change this - it simply helps the queue processor to run with a controlled internal loop
 	},

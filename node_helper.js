@@ -1,4 +1,4 @@
-/* global Module, MMM-ChartProvider-Finance */
+/* global Module, MMM-Provider-JSON */
 
 /* Magic Mirror
  * Module: node_helper
@@ -9,7 +9,10 @@
 
 const moduleruntime = new Date();
 
-//this loads and formats JSON feeds from a finance provider into NDTF items, depending on its config when called to from the main module
+//this loads and formats JSON feeds from a specified source into extended NDTF items, depending on its config when called to from the main module
+
+//TODO 
+
 //to minimise activity, it will track what data has been already sent back to the module
 //and only send the delta each time, using the timestamp of the incoming data.
 
@@ -59,118 +62,116 @@ module.exports = NodeHelper.create({
 		this.queue = new QUEUE.queue("single", false);
 	},
 
-	showElapsed: function () {
-		endTime = new Date();
-		var timeDiff = endTime - startTime; //in ms
-		// strip the ms
-		timeDiff /= 1000;
-
-		// get seconds 
-		var seconds = Math.round(timeDiff);
-		return (" " + seconds + " seconds");
-	},
-
 	stop: function () {
 		console.log("Shutting down node_helper");
-		//this.connection.close();
 	},
+
+	buildURL: function (config) {
+
+		var tempURL = config.baseurl;
+
+		// replace any paramaters in the baseurl
+
+		for (var param in config.urlparams) {
+			tempURL = tempURL.replace('{'+param+'}',urlparams[param])
+        }
+
+		return tempURL
+    },
 
 	setconfig: function (moduleinstance, config) {
 
 		if (this.debug) { this.logger[moduleinstance].info("In setconfig: " + moduleinstance + " " + config); }
 
-		if (config.input != null) {
+		//deepcopy config
 
-			config['useHTTP'] = false;
+		var tempconfig = JSON.parse(JSON.stringify(config));
 
-			// work out if we need to use a HTTP processor
+		if (tempconfig.input != null) {
 
-			if (config.input.substring(0, 4).toLowerCase() == "http") { config.useHTTP = true; }
+			tempconfig['useHTTP'] = false;
+
+			// work out if we need to use a HTTP processor and build the url and store in the input field for compatibility 
+			// with the old code for handling JSON
+
+			if (tempconfig.input == "URL") {
+				tempconfig.useHTTP = true;
+				tempconfig.input = buildURL(config);
+			}
+
 		}
+
+		//now build all the required values from the defaults if not entered in the config
+		//creating a working fields set for this instance
+
+		
+		//add an outputname if not specified
+		//find any sort values and populate the sort control arrays
+		//if key not specified then make first field the key field
+		var keyfound = false;
+		var sorting = false;
+		var sortkeys = [];
+
+		//and 
+
+		config.fields.forEach(function (field, index) {
+			if (field.outputname == null) { tempconfig.fields[index]['outputname'] = fieldname;}
+			if (field.sort) {
+				sorting = true;
+				sortkeys.push(tempconfig.fields[index]['outputname'])
+			}
+
+		})
+
+		if (!keyfound) {
+			tempconfig.fields[0]['key'] = true;
+			//add this as first sortkey if we are sorting, as defined by any field sort=true
+			if (sorting && !tempconfig.fields[0].sort) {
+				tempconfig.fields[0]['sort'] = true;
+				sortkeys.unshift(tempconfig.fields[0].outputname)
+			};
+		}
+
+		tempconfig[sorting] = sorting;
+
+
+		//fields: [],		// an array of field definitions 
+							// field definitions are in the format of (|entry is optional|)
+							// {fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,outputname:''|,|sort:true|}}
+							// fieldname is  the  fieldname of the input field in the input data
+							// address is optional, if not specified then the data is extracted from the base address level
+							// fieldtype can be 'n', 's', 'b', 't'
+							// n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric 
+							// s = string, the input is converted to string if not string for output
+							// b = boolean, the input is converted to true/false for output
+							// t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
+							//	timestamp can includes a format to help the conversion of the input to the output
+							// key indicates that this field should be used for the subject entry within the output, if not specificed then the first entry is the key, the key is the highest level to use if the data is sorted
+							// outputname is the name to use for the field in output, if not specified the fieldname is used
+							// sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array
+
+		//convert to keys for JSON Extraction
+
+		tempconfig.errorkey = 'error';
+		tempconfig.errorcode = 'code';
+		tempconfig.errordescription = 'info';
+
+		tempconfig.rootkey = config.baseaddress;
+
+		//add a error location just in case
+
 
 		//store a local copy so we dont have keep moving it about
 
-		providerstorage[moduleinstance] = { config: config, trackingfeeddates: [] };
+		providerstorage[moduleinstance] = { config: tempconfig, trackingfeeddates: [] };
 
 		var self = this;
 
-		//store the required data for the processing and have as many feeds as there are incoming feeds and stocks!
-
-		var totalfeedcount = 0;
-
-		providerstorage[moduleinstance].config.financefeeds.forEach(function (configfeed) {
-
-			configfeed.stocks.forEach(function (stockfeed,index) {
-
-				//amend the addresses in the config to dot notation depending on the input if prefixed by @
-				//all are full addresses with0ut the rootkey as that is used to extract the core of the JSON in yahoo
-				//if the root key is changed from the default then this wont work
-				const defaultrootkey = 'chart.result';
-				const dotnotationkeys = {
-					'@close': 'chart.result.indicators.quote.0.close',
-					'@open': 'chart.result.indicators.quote.0.open',
-					'@high': 'chart.result.indicators.quote.0.high',
-					'@low': 'chart.result.indicators.quote.0.low',
-					'@volume': 'chart.result.indicators.quote.0.volume',
-					'@timestamp': 'chart.result.timestamp',
-					'@adjclose': 'chart.result.indicators.adjclose'
-					}
-
-				if ((dotnotationkeys[configfeed.value] != null || dotnotationkeys[configfeed.timestamp] != null || dotnotationkeys[configfeed.object] != null || dotnotationkeys[configfeed.subject] != null) && configfeed.rootkey != defaultrootkey) {
-					console.error("if using the @ key names, the root key must be left as default");
-				}
-				else {
-					if (dotnotationkeys[configfeed.value] != null) { configfeed.value = dotnotationkeys[configfeed.value].replace(defaultrootkey+'.', '');}
-					if (dotnotationkeys[configfeed.timestamp] != null) { configfeed.timestamp = dotnotationkeys[configfeed.timestamp].replace(defaultrootkey + '.', ''); }
-					if (dotnotationkeys[configfeed.object] != null) { configfeed.object = dotnotationkeys[configfeed.object].replace(defaultrootkey + '.', ''); }
-					if (dotnotationkeys[configfeed.subject] != null) { configfeed.subject = dotnotationkeys[configfeed.subject].replace(defaultrootkey + '.', ''); }
-				}
-
-				var feed = { sourcetitle: '', lastFeedDate: '', latestfeedpublisheddate: new Date(0), feedconfig: configfeed, stock: stockfeed, stockname: (configfeed.stocknames == null) ? null : configfeed.stocknames[index]};
-
-				//we add some additional config information for usage in processing the data
-
-				configfeed["useruntime"] = false;
-				configfeed["usenumericoutput"] = false;
-
-				if (configfeed.type == 'numeric') { configfeed["usenumericoutput"] = true; }
-
-				if (typeof configfeed.timestamp == "number") { //wants an offset of the runtime, provided in seconds, or it was blank
-
-					configfeed["useruntime"] = true;
-					configfeed["runtime"] = new Date(moduleruntime.getTime() + (configfeed.timestamp * 1000));
-
-				}
-
-				//validate the yahoo options
-
-				if (['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', '10y', 'ytd', 'max'].indexOf(configfeed.periodrange) == -1) { console.error("period range option is incorrect"); };
-				if (['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo'].indexOf(configfeed.interval) == -1) { console.error("interval option is incorrect"); };
-				if (configfeed.events != 'history') { console.error("events only supports 'history' as an option"); }
-
-				//store the actual timestamp to start filtering, this will change as new feeds are pulled to the latest date of those feeds
-				//if no date is available on a feed, then the current latest date of a feed published is allocated to it
-
-				feed.lastFeedDate = commonutils.calcTimestamp(configfeed.oldestage);
-				feed.sourcetitle = configfeed.feedtitle;
-				feed.feedconfig = configfeed;
-
-				providerstorage[moduleinstance].trackingfeeddates.push(feed);
-
-				totalfeedcount++;
-
-			});
-		});
-
-		this.outputarray = new Array(totalfeedcount);
-
-		for (oidx = 0; oidx < totalfeedcount; oidx++) {
-			this.outputarray[oidx] = [];
-		}
+		this.outputarray = [];
 
 	},
 
-	getconfig: function () { return config; },
+	getconfig: function (moduleinstance) { return providerstorage[moduleinstance].config; },
 
 	socketNotificationReceived: function (notification, payload) {
 
@@ -216,75 +217,55 @@ module.exports = NodeHelper.create({
 	processfeeds: function (moduleinstance, providerid) {
 
 		var self = this;
-		var feedidx = -1;
 
 		if (this.debug) { this.logger[moduleinstance].info("In processfeeds: " + moduleinstance + " " + providerid); }
 
-		providerstorage[moduleinstance].trackingfeeddates.forEach(function (feed) {
+		//as there is only 1 feed for a provider reduce this code to 1 iteration
 
-			//build the url
+		const tempconfig = providerstorage[moduleinstance].config;
+		const options = new URL(url);
 
-			const config = providerstorage[moduleinstance].config;
-			var tempconfig = JSON.parse(JSON.stringify(config));
-			var feedconfig = feed.feedconfig;
+		var JSONconfig = {
+			options: options,
+			config: tempconfig,
+			feed: '',
+			moduleinstance: moduleinstance,
+			providerid: providerid,
+			feedidx: 0,
+		};
 
-			if (feedconfig.periodstart == null || feedconfig.periodend == null) {
-				var url = `${config.input}${feed.stock}?range=${feedconfig.periodrange}&interval=${feedconfig.interval}&events=${feedconfig.events}`;
+		JSONconfig['callback'] = function (JSONconfig, inputjson) {
+
+			var jsonerror = utilities.getkeyedJSON(inputjson, tempconfig.errorkey); 
+
+			var jsonarray = utilities.getkeyedJSON(inputjson, tempconfig.rootkey);
+
+			//check to see if we have an actual error to report
+
+			if (jsonerror != null) {
+				console.error(jsonerror[tempconfig.errorcode], jsonerror[tempconfig.errordescription]);
 			}
-			else {
-				var startperiod = Math.round(new Date(feedconfig.periodstart).getTime / 1000);
-				var endperiod = Math.round(new Date(feedconfig.periodend).getTime / 1000);
-				var url = `${config.input}${feed.stock}?period1=${startperiod}&period2=${endperiod}&interval=${feedconfig.interval}&events=${feedconfig.events}`;
-			}
 
-			tempconfig.input = url;
-
-			const options = new URL(url);
-
-			var JSONconfig = {
-				options: options,
-				config: tempconfig,
-				feed: feed,
-				moduleinstance: moduleinstance,
-				providerid: providerid,
-				feedidx: feedidx,
-			};
-
-			JSONconfig['callback'] = function (JSONconfig, inputjson) {
-
-				var jsonerror = utilities.getkeyedJSON(inputjson, feedconfig.errorkey);
-
-				var jsonarray = utilities.getkeyedJSON(inputjson, feedconfig.rootkey);
-
-				//check to see if we have an actual error to report
-
-				if (jsonerror != null) {
-					console.error(jsonerror.code, jsonerror.description);
-				}
-
-				//check it actually contains something, assuming if empty it is in error
-				if (jsonarray != null) {
-					if (jsonarray.length == 0) {
-						console.error("json array is empty");
-						return null;
-					}
-				}
-				else {
+			//check it actually contains something, assuming if empty it is in error
+			if (jsonarray != null) {
+				if (jsonarray.length == 0) {
 					console.error("json array is empty");
 					return null;
-                }
-
-				self.queue.addtoqueue(function () {
-					self.processfeed(JSONconfig.feed, JSONconfig.moduleinstance, JSONconfig.providerid, ++JSONconfig.feedidx, jsonarray);
-				});
-
-				self.queue.startqueue(providerstorage[JSONconfig.moduleinstance].config.waitforqueuetime); //the start function ignores a start once started
+				}
 			}
+			else {
+				console.error("json array is empty");
+				return null;
+            }
 
-			JSONutils.getJSONnew(JSONconfig);
+			self.queue.addtoqueue(function () {
+				self.processfeed(JSONconfig.feed, JSONconfig.moduleinstance, JSONconfig.providerid, ++JSONconfig.feedidx, jsonarray);
+			});
 
-		});
+			self.queue.startqueue(providerstorage[JSONconfig.moduleinstance].config.waitforqueuetime); //the start function ignores a start once started
+		}
 
+		JSONutils.getJSONnew(JSONconfig);
 	},
 
 	showstatus: function (moduleinstance) {
@@ -323,11 +304,11 @@ module.exports = NodeHelper.create({
 		//and add an id for tracking purposes and wrap that in an array
 
 		var payloadforprovider = {
-			providerid: providerid, source: source, payloadformodule: [{ setid: source.sourcetitle, itemarray: this.outputarray[feedidx] }]
+			providerid: providerid, source: source, payloadformodule: [{ setid: source.sourcetitle, itemarray: this.outputarray }]
 		};
 
 		if (this.debug) {
-			this.logger[moduleinstance].info("In send, source, feeds // sending items this time: " + (this.outputarray[feedidx].length > 0));
+			this.logger[moduleinstance].info("In send, source, feeds // sending items this time: " + (this.outputarray.length > 0));
 			this.logger[moduleinstance].info(JSON.stringify(source));
 		}
 
@@ -339,7 +320,7 @@ module.exports = NodeHelper.create({
 
 		// as we have sent it and the important date is stored we can clear the outputarray
 
-		this.outputarray[feedidx] = [];
+		this.outputarray = [];
 
 		this.queue.processended();
 
@@ -350,7 +331,7 @@ module.exports = NodeHelper.create({
 
 	processfeed: function (feed, moduleinstance, providerid, feedidx, jsonarray) {
 
-		//we process a stock feed at a time here
+		//we process the JSON  here / 1 dataset
 
 		var sourcetitle = feed.sourcetitle;
 
