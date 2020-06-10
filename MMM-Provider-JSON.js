@@ -32,50 +32,38 @@ var consumerpayloads = {};
 
 // when we get the start message we need to clear all tracking information as the consumer may resend a start message
 
-Module.register("MMM-ChartProvider-Finance", {
+Module.register("MMM-Provider-JSON", {
 
 	// Default module config.
 	defaults: {
-		text: "MMM-ChartProvider-JSON",
+		text: "MMM-Provider-JSON",
 		consumerids: ["MMFD1"], // the unique id of the consumer(s) to listen out for
-		id: "MMFP1", //the unique id of this provider
-		datarefreshinterval: 6000*60,	//milliseconds to pause before checking for new data // common timer for all consumers
-										//one or more definitions of how the data in input will be processed
-										//to produce array of item(s) keyed on the feedtitle
-										//
-										//certain key names can be prefixed with @ these use currently known addresses within the JSON to obtain that key
-										// i.e. @open will get the open value for the stock from indicators.quote.0.open
-		financefeeds: [
-			{
-				feedname: null,
-				setid: null,			// | Yes | the setif of this particular data, used to identify the data when revived in display module
-				rootkey: 'chart.result',// | No | the key value(s) in dot notation to determine at what level to extract data | a valid string | the first level
-				errorkey: 'chart.error',// | No | the key value(s) in dot notation to determine at what level to extract error | a valid string | the first level
-				object: null,			// | Yes | the KEY name(s) to use as an object for an item | expected to be indicators.quote.close,high,low,open,volume | none
-				subject: 'stock',       // | No | the subject to insert into the item | any valid string | 'Stock' - the stock being extracted
-				value: '@close',        // | Yes | @close,@open,@high,@low,@volume,@timestamp,@adjclose the KEY name to use to for the value field of the item | any valid string | the key name in the object field if null
-				type: "string",         // | No | the type of the value when added to the output item | numeric(will validate using parsefloat) or string | string
-				timestamp: '@timestamp', // | No |@close,@open,@high,@low,@volume,@timestamp,@adjclose the KEY name(s) of a timestamp to use for the timestamp field value in the item, | dot notation of timestamp from root key | 'timestamp'
-				timestampformat: null,  // | No | a moment compatible timestamp format used to validate any dates found | timestamp string | Null - dont use any format
-				filename: null,         // | No | local file name(no paths) to save a serialised version of the extracted data as an array of items | any valid filename or not defined for no output.| none
-				oldestage: 'today',		//  oldestage:	indicates how young a feed/data within a feed must be to be considered either ,
-										//				a timestamp, must be in YYYY-MM-DD HH:MM:SS format to be accepted (use moments to validate)
-										//				the word today for midnight today, 
-										//				the number of minutes old as an integer
-				stocks: null,			//	an array of stock identifiers
-				usenames: false,		//  use the meta data provided to name the stock in the output
-				stocknames: null,		//  an array of names to use instead of the stock tickers if usemeta = true
-				periodstart: null,		//  a valid date instance (will be converted internally to unix number of seconds ... (not milliseconds))
-				periodend: null,		//  a valid date instance (will be converted internally to unix number of seconds ... (not milliseconds))
-				periodrange: 'ytd',		//	one of the valid periods to extract - default unless both periodstart and periodend are defined
-										//	1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
-				interval: '1d',			//	one of the valid intervals to extract
-										//	1m, 2m, 5m, 15m, 30m, 60m, 90m, 1h, 1d, 5d, 1wk, 1mo, 3mo
-				events: 'history',		// the type of events to extract, options are: history and ??
+		id: "MMPJ1", //the unique id of this provider
+		datarefreshinterval: 1000 * 60 * 60 * 24,	//milliseconds to pause before checking for new data // common timer for all consumers // 
+													// adjust to ensure quote not breached on restricted aPi call limits
+		input:'URL',		// either 'URL' (default), 'provider', 'filename'
+		id: '',				// the id of this extracted data that will be used in the object field of the output
+		baseurl: '',		// the fixed part of the url, can include insertable values {apikey} that will be taken from the named variables in the config, may also include defaults such as time or date 
+		urlparams: null,	// (i.e. {apikey:'jakhsdfasdkfjh9875t-987asdgwe',something:'else'}, //TODO add dynamic URLparams
+		baseaddress: null,  // a dotnotation base entry level from which all other data addresses are defined
+		itemtype: 'array',	// how the items to process are arranged within the input
+							// if array, then each item is accessed via an index
+							// if object, then each item is accessed via some other method to be determined
+		fields: [],			// an array of field definitions 
+							// field definitions are in the format of (|entry is optional|)
+							// {fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,outputname:''|,|sort:true|}}
+							// fieldname is  the  fieldname of the input field in the input data
+							// address is optional, if not specified then the data is extracted from the base address level
+							// fieldtype can be 'n', 's', 'b', 't'
+							// n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric 
+							// s = string, the input is converted to string if not string for output
+							// b = boolean, the input is converted to true/false for output
+							// t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
+							//	timestamp can includes a format to help the conversion of the input to the output
+							// key indicates that this field should be used for the subject entry within the output, if not specificed then the first entry is the key, the key is the highest level to use if the data is sorted
+							// outputname is the name to use for the field in output, if not specified the fieldname is used
+							// sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array
 
-			},
-
-		],
 		waitforqueuetime: 0010, //don't change this - it simply helps the queue processor to run with a controlled internal loop
 	},
 
@@ -92,31 +80,6 @@ Module.register("MMM-ChartProvider-Finance", {
 
 	},
 
-	setConfig: function (config) {  //replace the standard to ensure feeds defaults are correctly set
-		this.config = Object.assign({}, this.defaults, config);
-		for (var jidx = 0; jidx < config.financefeeds.length; jidx++) {
-			this.config.financefeeds[jidx] = Object.assign({}, this.defaults.financefeeds[0], config.financefeeds[jidx]);
-			this.config.financefeeds[jidx]["useruntime"] = false;
-			if (typeof this.config.financefeeds[jidx].timestamp == "number") { //wants an offset of the runtime, provided in seconds, or it was blank
-				this.config.financefeeds[jidx]["useruntime"] = true;
-				this.config.financefeeds[jidx]["adjustedruntime"] = new Date(moduleruntime.getTime() + (this.config.financefeeds[jidx].timestamp * 1000));
-			}
-		}
-		this.config['input'] = 'https://query1.finance.yahoo.com/v8/finance/chart/';
-		//validate that the provided settings are valid and log error if not
-
-	},
-
-	showElapsed: function () {
-		endTime = new Date();
-		var timeDiff = endTime - startTime; //in ms
-		// strip the ms
-		timeDiff /= 1000;
-
-		// get seconds 
-		var seconds = Math.round(timeDiff);
-		return(" " + seconds + " seconds");
-	},
 
 	myconsumer: function (consumerid) {
 
@@ -142,7 +105,7 @@ Module.register("MMM-ChartProvider-Finance", {
 		//and mimic a response - we also want to start our cycles here
 		//when we get multiple consumers to look after
 
-		if ((notification == 'MMM-ChartDisplay_READY_FOR_ACTION' || notification == 'MMM-ChartDisplay_SEND_MORE_DATA') && this.myconsumer(payload.consumerid)){
+		if ((notification == 'MMM-Consumer_READY_FOR_ACTION' || notification == 'MMM-Consumer_SEND_MORE_DATA') && this.myconsumer(payload.consumerid)){
 
 			var self = this
 
@@ -166,7 +129,7 @@ Module.register("MMM-ChartProvider-Finance", {
 			}
 
 			//now we need to use our nice little nodehelper to get us the stuff 
-			//- be aware this is very very async and we migh hit twisty nickers
+			//- be aware this is very very async and we might hit twisty nickers
 
 			//initial request to get data
 			self.sendNotificationToNodeHelper("UPDATE", { moduleinstance: self.identifier, providerid: self.config.id });
@@ -279,7 +242,7 @@ Module.register("MMM-ChartProvider-Finance", {
 					fdp.source = nhpayload.source;
 					fdp.payload = payload.stuffitems;
 
-					this.sendNotification('CHART_PROVIDER_DATA', fdp);
+					this.sendNotification('PROVIDER_DATA', fdp);
 				}
 
 			};

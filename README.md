@@ -2,6 +2,8 @@
 
 This magic mirror module is a MMM-Provider module that will extract specified data from a JSON feed and provide it to any requesting consumers in a standard format.
 
+the module can obtain data from a url or a local file or another provider providing data in well formed JSON
+
 The Output format is specified and can be a variation of the NDTF standard.
 
 1) Specify the feed including base URL, API keys
@@ -12,7 +14,7 @@ The Output format is specified and can be a variation of the NDTF standard.
 5) Data can be sorted before output by any output key
 
 Specifications:
-
+input:'URL' // default is URL, means use the baseurl, but can also be provider to get json from a provider or a filename
 id:'', // the id of this extracted data that will be used in the object field of the output
 baseurl:'', //the fixed part of the url, can include insertable values {apikey} that will be taken from the named variables in the config, may also include defaults such as time or date 
 urlparams:{fieldname:fieldvalue}, // (i.e. {apikey:'jakhsdfasdkfjh9875t-987asdgwe'},
