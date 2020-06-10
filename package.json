@@ -1,0 +1,26 @@
+{
+  "name": "MMM-ChartProvider-Finance",
+  "version": "1.0.0",
+  "description": "Magic Mirror Module for pulling finance data, converting to NDTF format and passing to a main module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheBodger/MMM-ChartProvider-Finance"
+  },
+  "author": {
+    "name": "N Scott"
+  },
+  "keywords": [
+    "magic mirror",
+    "smart mirror",
+    "JSON Feeds",
+    "Finance Data",
+    "module",
+    "provider"
+  ],
+  "dependencies": {},
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TheBodger/MMM-ChartProvider-Finance/issues"
+  },
+  "homepage": "https://github.com/TheBodger/MMM-ChartProvider-Finance#readme"
+}
