@@ -70,10 +70,10 @@ module.exports = NodeHelper.create({
 
 		var tempURL = config.baseurl;
 
-		// replace any paramaters in the baseurl
+		// replace any parameters in the baseurl
 
 		for (var param in config.urlparams) {
-			tempURL = tempURL.replace('{'+param+'}',urlparams[param])
+			tempURL = tempURL.replace('{' + param + '}',config.urlparams[param])
         }
 
 		return tempURL
@@ -96,7 +96,7 @@ module.exports = NodeHelper.create({
 
 			if (tempconfig.input == "URL") {
 				tempconfig.useHTTP = true;
-				tempconfig.input = buildURL(config);
+				tempconfig.input = this.buildURL(config);
 			}
 
 		}
@@ -116,16 +116,37 @@ module.exports = NodeHelper.create({
 
 		config.fields.forEach(function (field, index) {
 
-			if (field.outputname == null) { tempconfig.fields[index]['outputname'] = fieldname;}
-			if (field.sort) {
+			//get the fieldname
+
+			var fieldname = Object.keys(field)[0];
+			var fieldparams = field[fieldname];
+
+			tempconfig.fields[index]['fieldname'] = fieldname;
+
+			tempconfig.fields[index]['outputname'] = fieldparams.outputname;
+
+			if (fieldparams.outputname == null) { tempconfig.fields[index]['outputname'] = fieldname; }
+
+			tempconfig.fields[index].fieldtype = fieldparams.inputtype;
+
+			if (fieldparams.inputtype == null) {
+				tempconfig.fields[index].fieldtype = 's'; 
+			}
+
+			if (fieldparams.timestampformat != null) {
+				tempconfig.fields[index]['timestampformat'] = fieldparams.timestampformat;
+			}
+
+			if (fieldparams.key) { //add to the sort list, just in case, in first place
+				keyfound = true;
+				sortkeys.unshift(tempconfig.fields[index]['outputname'])
+				tempconfig.fields[index]['key'] = true;
+			}
+			else if (fieldparams.sort) {
 				sorting = true;
 				sortkeys.push(tempconfig.fields[index]['outputname'])
 			}
-
-			if (field.fieldtype == null) {
-				tempconfig.fields[index].fieldtype = 's'; 
-            }
-
+			
 		})
 
 		if (!keyfound) {
@@ -219,13 +240,14 @@ module.exports = NodeHelper.create({
 	processfeeds: function (moduleinstance, providerid) {
 
 		var self = this;
+		var options;
 
 		if (this.debug) { this.logger[moduleinstance].info("In processfeeds: " + moduleinstance + " " + providerid); }
 
 		//as there is only 1 feed for a provider reduce this code to 1 iteration
 
 		const tempconfig = providerstorage[moduleinstance].config;
-		const options = new URL(url);
+		if (tempconfig.useHTTP) { options = new URL(tempconfig.input); }
 
 		var JSONconfig = {
 			options: options,
@@ -328,7 +350,6 @@ module.exports = NodeHelper.create({
 
 	},
 
-
 	processfeed: function (feed, moduleinstance, providerid, feedidx, jsonarray) {
 
 		//we process the JSON  here / 1 dataset
@@ -348,11 +369,15 @@ module.exports = NodeHelper.create({
 
 			const item = jsonarray[idx];
 
-			for (var field in config.fields) {
+			config.fields.forEach( function(field) {
 
 			//depending on the field type we need to validate and convert
 
-				var validatedfield = self.validateconvertfield(field, utilities.getkeyedJSON(item, field.address + '.' + field.fieldname));//extract using a dotnotation key
+				var dotaddress = field.fieldname;
+
+				if (field[field.fieldname].address != null) { dotaddress = field[field.fieldname].address + '.' + dotaddress;}
+
+				var validatedfield = self.validateconvertfield(field, utilities.getkeyedJSON(item, dotaddress));//extract using a dotnotation key
 
 				if (validatedfield.valid) {
 					if (field.key) {
@@ -364,9 +389,9 @@ module.exports = NodeHelper.create({
 				}
 				else {
 					processthisitem = false;
-                }
+				}
 
-			}
+			})
 
 			if (processthisitem) {
 
@@ -403,10 +428,8 @@ module.exports = NodeHelper.create({
 
 		var rsssource = new RSS.RSSsource();
 		rsssource.sourceiconclass = '';
-		rsssource.sourcetitle = feed.feedconfig.setid;
-		rsssource.title = feed.feedconfig.setid;
-
-		providerstorage[moduleinstance].trackingfeeddates[feedidx]['latestfeedpublisheddate'] = maxfeeddate;
+		rsssource.sourcetitle = '';
+		rsssource.title = '';
 
 		self.send(moduleinstance, providerid, rsssource, feedidx);
 		self.done();
@@ -424,17 +447,21 @@ module.exports = NodeHelper.create({
 
 		var result = { valid: true, value: value };
 
-		if (fieldconfig.type == 's' || value == null) { //if a string or null just pass it on
+		if (value == null) { //if  null just pass it on
+			return result;
+		}
+
+		if (fieldconfig.fieldtype == 's' ) { //if a string just pass it on
 			result.value = value.toString();
 			return result;
 		}
 
-		if (fieldconfig.type == 'n' && ( (typeof value) == "number" || !isNaN(parseFloat(value)) ) ) {
+		if (fieldconfig.fieldtype == 'n' && ( (typeof value) == "number" || !isNaN(parseFloat(value)) ) ) {
 			result.value = parseFloat(value);
 			return result;
         } 
 
-		if (fieldconfig.type == 'b') {
+		if (fieldconfig.fieldtype == 'b') {
 			if (typeof value == 'string' && (value.toLowerCase == 'false' || parseFloat(value) == 0)) {
 				result.value = false;
 			} else {
@@ -443,7 +470,7 @@ module.exports = NodeHelper.create({
 			return result;
 		} 
 
-		if (fieldconfig.type == 't') {
+		if (fieldconfig.fieldtype == 't') {
 			if (fieldconfig.timestampformat == null) {
 				if (moment(value).isValid()) {
 					result.value = moment(value).toDate().getTime();
