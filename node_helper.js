@@ -408,9 +408,9 @@ module.exports = NodeHelper.create({
 			var sortutility = new utilities.mergeutils();
 
 			sortutility.preparesort('sortme', this.outputarray[0], config.sortkeys, false);
-			console.log(JSON.stringify(this.outputarray));
+			JSONutils.putJSON("./" + "B"+config.filename, this.outputarray);
 			this.outputarray = sortutility.sortset(this.outputarray);
-			console.log(JSON.stringify(this.outputarray));
+			JSONutils.putJSON("./" + "A"+config.filename, this.outputarray);
         }
 
 		if (config.filename == null) {
