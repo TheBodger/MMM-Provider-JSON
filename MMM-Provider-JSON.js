@@ -107,9 +107,8 @@ Module.register("MMM-Provider-JSON", {
 		//and mimic a response - we also want to start our cycles here
 		//when we get multiple consumers to look after
 
-		//if ((notification == 'MMM-Consumer_READY_FOR_ACTION' || notification == 'MMM-Consumer_SEND_MORE_DATA') && this.myconsumer(payload.consumerid)) {
-		if ((notification == 'MMM-ChartDisplay_READY_FOR_ACTION' || notification == 'MMM-Consumer_SEND_MORE_DATA') && this.myconsumer(payload.consumerid)) {
-
+		if ((notification == 'MMM-Consumer_READY_FOR_ACTION' || notification == 'MMM-Consumer_SEND_MORE_DATA') && this.myconsumer(payload.consumerid)) {
+		
 			var self = this
 
 			//clear all the tracking data for this consumer

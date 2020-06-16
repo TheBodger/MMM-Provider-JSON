@@ -158,8 +158,8 @@ module.exports = NodeHelper.create({
 			};
 		}
 
-		tempconfig[sorting] = sorting;
-		tempconfig[sortkeys] = sortkeys;
+		tempconfig['sorting'] = sorting;
+		tempconfig['sortkeys'] = sortkeys;
 
 		//fields: [],		// an array of field definitions 
 							// field definitions are in the format of (|entry is optional|)
@@ -336,7 +336,7 @@ module.exports = NodeHelper.create({
 			this.logger[moduleinstance].info(JSON.stringify(source));
 		}
 
-		if (this.outputarray[feedidx].length > 0) {
+		if (this.outputarray.length > 0) {
 
 			this.sendNotificationToMasterModule("UPDATED_STUFF_" + moduleinstance, payloadforprovider);
 
@@ -407,10 +407,10 @@ module.exports = NodeHelper.create({
 
 			var sortutility = new utilities.mergeutils();
 
-			sortutility.preparesort('sortme', outputarray[0], config.sortkeys, false);
-
-			outputarray = sortutility.sortset(outputarray);
-
+			sortutility.preparesort('sortme', this.outputarray[0], config.sortkeys, false);
+			console.log(JSON.stringify(this.outputarray));
+			this.outputarray = sortutility.sortset(this.outputarray);
+			console.log(JSON.stringify(this.outputarray));
         }
 
 		if (config.filename == null) {
