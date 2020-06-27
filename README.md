@@ -15,7 +15,8 @@ The Output format is specified and can be a variation of the NDTF standard.
 
 Specifications:
 input:'URL' // default is URL, means use the baseurl, but can also be provider to get json from a provider or a filename
-id:'', // the id of this extracted data that will be used in the object field of the output
+id:'', // the unique id of this instance of the module
+type:'', //the type of the data that wil be used in the data object
 baseurl:'', //the fixed part of the url, can include insertable values {apikey} that will be taken from the named variables in the config, may also include defaults such as time or date 
 urlparams:{fieldname:fieldvalue}, // (i.e. {apikey:'jakhsdfasdkfjh9875t-987asdgwe'},
 baseaddress:'', //a dotnotation base entry level from which all other data addresses are defined
@@ -84,6 +85,7 @@ To use this module, add the following minimum configuration block to the modules
 |------------------------ |--------------
 | `text`                | *Optional* - <br><br> **Possible values:** Any string.<br> **Default value:** The Module name
 | `consumerids`            | *Required* - a list of 1 or more consumer modules this module will provide for.<br><br> **Possible values:** An array of strings exactly matching the ID of one or more MMM-ChartDisplay modules <br> **Default value:** none
+| `id`         | *Required* - The unique ID of this provider module<br><br> **Possible values:** any unique string<br> **Default value:** none
 | `id`         | *Required* - The unique ID of this provider module<br><br> **Possible values:** any unique string<br> **Default value:** none
 | `datarefreshinterval`            | *Optional* - milliseconds to pause before checking for new data in the feeds.<br><br> **Possible values:** a number in milliseconds <br> **Default value:** `6000*60` 
 | `financefeeds`        | *Required* - An array of one or more feed definitions, see below for the financefeeds configuration options 

@@ -7,6 +7,9 @@
  * MIT Licensed.
  */
 
+
+todo: add a package option where the fields definiton can be pulled from an external package (i.e. flight arrival, flighdeparture)
+
 var startTime = new Date();
 
 var feedDisplayPayload = { consumerid: '', providerid: '', payload: '' };
@@ -42,7 +45,8 @@ Module.register("MMM-Provider-JSON", {
 		datarefreshinterval: 1000 * 60 * 60 * 24,	//milliseconds to pause before checking for new data // common timer for all consumers // 
 													// adjust to ensure quote not breached on restricted aPi call limits
 		input:'URL',		// either 'URL' (default), 'provider', 'filename'
-		id: '',				// the id of this extracted data that will be used in the object field of the output
+		id: '',				// the id of this module that must be unique
+		type: 'FlightArrivals',				// the type of this extracted data that will be used in the object field of the output
 		baseurl: '',		// the fixed part of the url, can include insertable values {apikey} that will be taken from the named variables in the config, may also include defaults such as time or date 
 		urlparams: null,	// (i.e. {apikey:'jakhsdfasdkfjh9875t-987asdgwe',something:'else'}, //TODO add dynamic URLparams
 		baseaddress: null,  // a dotnotation base entry level from which all other data addresses are defined

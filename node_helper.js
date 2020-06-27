@@ -365,7 +365,7 @@ module.exports = NodeHelper.create({
 		for (var idx = 0; idx < jsonarray.length; idx++) {
 
 			var processthisitem = true; //drop items not meeting any validation rules
-			var tempitem = {object:config.id};
+			var tempitem = {object:config.type};
 
 			const item = jsonarray[idx];
 
