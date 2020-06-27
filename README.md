@@ -16,13 +16,15 @@ The Output format is specified and can be a variation of the NDTF standard.
 Specifications:
 input:'URL' // default is URL, means use the baseurl, but can also be provider to get json from a provider or a filename
 id:'', // the unique id of this instance of the module
+//outputname is the name to use for the field in output, if not specified the fieldname is used
+package:'', // optional package name. if present in the packages subfolder as packagename.js, this overrides any variables within the config file definition at run time in the node_helper only. Examples are included
 type:'', //the type of the data that wil be used in the data object
 baseurl:'', //the fixed part of the url, can include insertable values {apikey} that will be taken from the named variables in the config, may also include defaults such as time or date 
 urlparams:{fieldname:fieldvalue}, // (i.e. {apikey:'jakhsdfasdkfjh9875t-987asdgwe'},
 baseaddress:'', //a dotnotation base entry level from which all other data addresses are defined
 itemtype:'array/object' // how the items to process are arranged within the input
 // if array, then each item is accessed via an index
-// if object, then each item is accessed via some other method to be determined
+// if object, then each item is accessed via some other method to be determine
 fields:[], //an array of field definitions 
 //field definitions are in the format of (|entry is optional|)
 // {fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,outputname:''|,|sort:true|}}
@@ -35,7 +37,7 @@ fields:[], //an array of field definitions
 // t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
 //	timestamp can includes a format to help the conversion of the input to the output
 // key indicates that this field should be used for the subject entry within the output, if not specificed then the first entry is the key, the key is the highest level to use if the data is sorted
-//outputname is the name to use for the field in output, if not specified the fieldname is used
+
 //sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array
 //
 

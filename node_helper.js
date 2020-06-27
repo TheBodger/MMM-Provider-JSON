@@ -25,6 +25,7 @@ const moduleruntime = new Date();
 
 var NodeHelper = require("node_helper");
 var moment = require("moment");
+var fs = require('fs');
 
 //pseudo structures for commonality across all modules
 //obtained from a helper file of modules
@@ -73,11 +74,11 @@ module.exports = NodeHelper.create({
 		// replace any parameters in the baseurl
 
 		for (var param in config.urlparams) {
-			tempURL = tempURL.replace('{' + param + '}',config.urlparams[param])
-        }
+			tempURL = tempURL.replace('{' + param + '}', config.urlparams[param])
+		}
 
 		return tempURL
-    },
+	},
 
 	setconfig: function (moduleinstance, config) {
 
@@ -86,6 +87,24 @@ module.exports = NodeHelper.create({
 		//deepcopy config
 
 		var tempconfig = JSON.parse(JSON.stringify(config));
+
+		// add a package if requested and specified
+
+		if (tempconfig.package != null) {
+			//try and read a file and merge its contents with the deepcopy
+			var packagename = 'modules/MMM-Provider-JSON/packages/' + tempconfig.package + '.js';
+			try {
+				eval(fs.readFileSync(packagename) + '');
+				Object.assign( tempconfig, package); //merge
+			}
+			catch (err) {
+				//failed so we report and continue
+
+				console.error("Reading package file:", tempconfig.package , ' returned error: ', JSON.stringify(err));
+			}
+        }
+
+		//build the input details
 
 		if (tempconfig.input != null) {
 
@@ -96,7 +115,7 @@ module.exports = NodeHelper.create({
 
 			if (tempconfig.input == "URL") {
 				tempconfig.useHTTP = true;
-				tempconfig.input = this.buildURL(config);
+				tempconfig.input = this.buildURL(tempconfig);
 			}
 
 		}
@@ -104,7 +123,6 @@ module.exports = NodeHelper.create({
 		//now build all the required values from the defaults if not entered in the config
 		//creating a working fields set for this instance
 
-		
 		//add an outputname if not specified
 		//find any sort values and populate the sort control arrays
 		//if key not specified then make first field the key field
@@ -114,7 +132,7 @@ module.exports = NodeHelper.create({
 		var sorting = false;
 		var sortkeys = [];
 
-		config.fields.forEach(function (field, index) {
+		tempconfig.fields.forEach(function (field, index) {
 
 			//get the fieldname
 
@@ -182,7 +200,7 @@ module.exports = NodeHelper.create({
 		tempconfig.errorcode = 'code';
 		tempconfig.errordescription = 'info';
 
-		tempconfig.rootkey = config.baseaddress;
+		tempconfig.rootkey = tempconfig.baseaddress;
 
 		//store a local copy so we dont have keep moving it about
 

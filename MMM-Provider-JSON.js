@@ -8,7 +8,7 @@
  */
 
 
-todo: add a package option where the fields definiton can be pulled from an external package (i.e. flight arrival, flighdeparture)
+//todo: add a package option where the fields definiton can be pulled from an external package (i.e. flight arrival, flighdeparture)
 
 var startTime = new Date();
 
@@ -53,6 +53,7 @@ Module.register("MMM-Provider-JSON", {
 		itemtype: 'array',	// how the items to process are arranged within the input
 							// if array, then each item is accessed via an index
 							// if object, then each item is accessed via some other method to be determined
+		package:'',
 		fields: [],			// an array of field definitions 
 							// field definitions are in the format of (|entry is optional|)
 							// {fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,outputname:''|,|sort:true|}}
