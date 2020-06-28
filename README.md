@@ -67,20 +67,20 @@ Check out the example.config.js file for an example of a config that will produc
 
 ### Field definitions
 
-	<BR>field definitions are in the format of (|entry is optional|)
-	<BR>{fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,outputname:''|,|sort:true|}}
-	<BR>	fieldname is  the  fieldname of the input field in the input data
-	<BR>	address is optional, if not specified then the data is extracted from the base address level
-	<BR>	fieldtype can be 'n', 's', 'b', 't'
-	<BR>		n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric 
-	<BR>		s = string, the input is converted to string if not string for output
-	<BR>		b = boolean, the input is converted to true/false for output
-	<BR>		t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
-	<BR>			timestamp can includes a format to help the conversion of the input to the output
-	<BR>	key indicates that this field should be used for the subject entry within the output, if not specificed then the first entry is the key, the key is the highest level to use if the data is sorted
-	<BR>	outputname is the name to use for the field in output, if not specified the fieldname is used
-	<BR>	sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array
-	<BR>	if no key is included and any field is flagged as sorting, even if first field, then the key field is also flagged as sort
+	field definitions are in the format of (|entry is optional|)
+	{fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,outputname:''|,|sort:true|}}
+		fieldname is  the  fieldname of the input field in the input data
+		address is optional, if not specified then the data is extracted from the base address level
+		fieldtype can be 'n', 's', 'b', 't'
+			n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric 
+			s = string, the input is converted to string if not string for output
+			b = boolean, the input is converted to true/false for output
+			t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
+				timestamp can includes a format to help the conversion of the input to the output
+		key indicates that this field should be used for the subject entry within the output, if not specificed then the first entry is the key, the key is the highest level to use if the data is sorted
+		outputname is the name to use for the field in output, if not specified the fieldname is used
+		sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array
+		if no key is included and any field is flagged as sorting, even if first field, then the key field is also flagged as sort
 
 ### Example configuration
 
