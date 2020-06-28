@@ -43,7 +43,7 @@ Module.register("MMM-Provider-JSON", {
 		consumerids: ["MMFD1"], // the unique id of the consumer(s) to listen out for
 		id: "MMPJ1", //the unique id of this provider
 		datarefreshinterval: 1000 * 60 * 60 * 24,	//milliseconds to pause before checking for new data // common timer for all consumers // 
-													// adjust to ensure quote not breached on restricted aPi call limits
+													// adjust to ensure quota not breached on restricted aPi call limits
 		input:'URL',		// either 'URL' (default), 'provider', 'filename'
 		id: '',				// the id of this module that must be unique
 		type: 'FlightArrivals',				// the type of this extracted data that will be used in the object field of the output

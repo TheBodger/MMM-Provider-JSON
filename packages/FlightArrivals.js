@@ -4,6 +4,7 @@ var package =
 	baseurl: 'http://api.aviationstack.com/v1/flights?access_key={apikey}&arr_iata={airportcode}',//optional
 	baseaddress: 'data', //default is null = root
 	itemstype: 'array', //default is array
+	input:'URL',
 	fields: [//mandatory
 		{ flight_status: { outputname: 'status' } },
 		{ terminal: { address: 'departure' } },

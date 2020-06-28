@@ -59,7 +59,7 @@ Before installing this module;
 ## Installation
 To install the module, use your terminal to:
 1. Navigate to your MagicMirror's modules folder. If you are using the default installation directory, use the command:<br />`cd ~/MagicMirror/modules`
-2. Clone the module:<br />`git clone https://github.com/TheBodger/MMM-ChartProvider-Finance`
+2. Clone the module:<br />`git clone https://github.com/TheBodger/MMM-Provider-JSON`
 
 ## Using the module
 
@@ -68,18 +68,16 @@ To install the module, use your terminal to:
 To use this module, add the following minimum configuration block to the modules array in the `config/config.js` file:
 ```js
 {
-  consumerids:['consumerid of MMM-ChartDisplay'],
-  id:'unique id of this module instance',
-  financefeeds: [
-    {
-      setid: "unique setid of this data set",
-      object: "string denoting the object(ive) of this data set",
-      value: "key name in the input to be used as the actual value",
-	  stocks:['stock name'], //an array of stock names
-    }, 
-  ]
-}
+module: "MMM-Provider-JSON",
+			config: {
+				consumerids: ["consumerid",],
+				id: 'uniqueID', 
+				package: 'packagename',
+			}
+},
 ```
+
+Check out the example.config.js file for an example of a config that will produce an input of flights arriving at a specific airport for the MMM-Consumer-Flights module
 
 ### Configuration Options
 
@@ -146,7 +144,7 @@ this configuration produces stock information for 4 stocks. Note the use of dot 
 
 This is a WIP; changes are being made all the time to improve the compatibility across the modules. Please refresh this and the MMM-feedUtilities and MMM-ChartUtilities modules with a `git pull` in the relevant modules folders.
 
-The availability of the yahoo finance feeds can change sporadically or altogether.
+The included packages provide data for arrivals and departures to/from an airport, which uses the aviationstack API. This api provides comprehensive live data from most airports in the world of the status of all flights amongst other flight information. There is a free option which provides a maximum of 500 calls per month or you can buy more.
 
-The yahoo finance feed cannot currently be read by the MMM-ChartProvider-JSON module.
+To obtain an aviationstack api to embded in the config, sign up at https://www.aviationstack.com and then collect the API key. Use the dashboard provided to track your API usage.
 
