@@ -67,8 +67,8 @@ Check out the example.config.js file for an example of a config that will produc
 
 ### Field definitions
 
-	field definitions are in the format of (|entry is optional|)
-	{fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,outputname:''|,|sort:true|}}
+	field definitions are in the format: (|entry is optional|)
+	{fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,|outputname:''|,|sort:true|}}
 		fieldname is  the  fieldname of the input field in the input data
 		address is optional, if not specified then the data is extracted from the base address level
 		fieldtype can be 'n', 's', 'b', 't'
