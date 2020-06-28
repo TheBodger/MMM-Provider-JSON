@@ -54,40 +54,33 @@ Check out the example.config.js file for an example of a config that will produc
 | `consumerids`                | *Required* - <br><br> **Possible values:** Any consumerid(s) matching requesting consumer modules .<br> **Default value:** none
 | `id`                | *Required* - <br><br> **Possible values:** Any unique string identifying this instance of the module.<br> **Default value:** none
 | `datarefreshinterval`                | *Optional* - <br><br> **Possible values:** Any numeric value indicating the milliseconds to pause before checking for new data  .<br> **Default value:** 1000 * 60 * 60 * 24 (1 day)
-| `package`                | *Optional* - <br><br> **Possible values:** Any package name of a package in the packages folder excluding the .js suffix<br> **Default value:** none
+| `package`                | *Optional* - <br><br> **Possible values:** Any package name of a package in the packages folder excluding the .js suffix that contains any config entries for this module that will be merged with the config during run time<br> **Default value:** none
 | `input`                | *Optional* - <br><br> **Possible values:** 'URL', path of a file, 'provider'(TODO) <br> **Default value:** 'URL'
-
-		input:'URL',		// either 'URL' (default), 'provider', 'filename'
-		id: '',				// the id of this module that must be unique
-		type: 'FlightArrivals',				// the type of this extracted data that will be used in the object field of the output
-		baseurl: '',		// the fixed part of the url, can include insertable values {apikey} that will be taken from the named variables in the config, may also include defaults such as time or date 
-		urlparams: null,	// (i.e. {apikey:'jakhsdfasdkfjh9875t-987asdgwe',something:'else'}, //TODO add dynamic URLparams
-		baseaddress: null,  // a dotnotation base entry level from which all other data addresses are defined
-		itemtype: 'array',	// how the items to process are arranged within the input
-							// if array, then each item is accessed via an index
-							// if object, then each item is accessed via some other method to be determined
-		package:'',
-		fields: [],			// an array of field definitions 
-							// field definitions are in the format of (|entry is optional|)
-							// {fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,outputname:''|,|sort:true|}}
-							// fieldname is  the  fieldname of the input field in the input data
-							// address is optional, if not specified then the data is extracted from the base address level
-							// fieldtype can be 'n', 's', 'b', 't'
-							// n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric 
-							// s = string, the input is converted to string if not string for output
-							// b = boolean, the input is converted to true/false for output
-							// t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
-							//	timestamp can includes a format to help the conversion of the input to the output
-							// key indicates that this field should be used for the subject entry within the output, if not specificed then the first entry is the key, the key is the highest level to use if the data is sorted
-							// outputname is the name to use for the field in output, if not specified the fieldname is used
-							// sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array
-							// if no key is included and any field is flagged as sorting, even if first field, then the key field is flagged as sort
-
-		waitforqueuetime: 0010, //don't change this - it simply helps the queue processor to run with a controlled internal loop
-		filename:null,		//if set, the output data is also stored to this filename
+| `type`                | *Required* - <br><br> **Possible values:** Any string that will be sent in the Object field in the output<br> **Default value:** none
+| `baseurl`                | *Optional* - <br><br> **Possible values:** if required, a fully formed api URL, with any parameters included in the format {paramatername}<br> **Default value:** none
+| `urlparams`                | *Optional* - <br><br> **Possible values:** if required, an array of  paramater names and values that will be embedded into the baseurl<br> **Default value:** none
+| `baseaddress`                | *Optional* - <br><br> **Possible values:** The JSON field from which all other data will be extracted in dot notation format<br> **Default value:** none
+| `itemtype`                | *Optional* - <br><br> **Possible values:** Currently array<br> **Default value:** `array`
+| `fields`                | *Optional* - <br><br> **Possible values:** An array of field definitions<br> **Default value:** none
+| `filename`                | *Optional* - <br><br> **Possible values:** The path and filename where the output JSON object can be wrritten to for debug usage<br> **Default value:** none
 
 
+### Field definitions
 
+	<BR>field definitions are in the format of (|entry is optional|)
+	<BR>{fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,outputname:''|,|sort:true|}}
+	<BR>	fieldname is  the  fieldname of the input field in the input data
+	<BR>	address is optional, if not specified then the data is extracted from the base address level
+	<BR>	fieldtype can be 'n', 's', 'b', 't'
+	<BR>		n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric 
+	<BR>		s = string, the input is converted to string if not string for output
+	<BR>		b = boolean, the input is converted to true/false for output
+	<BR>		t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
+	<BR>			timestamp can includes a format to help the conversion of the input to the output
+	<BR>	key indicates that this field should be used for the subject entry within the output, if not specificed then the first entry is the key, the key is the highest level to use if the data is sorted
+	<BR>	outputname is the name to use for the field in output, if not specified the fieldname is used
+	<BR>	sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array
+	<BR>	if no key is included and any field is flagged as sorting, even if first field, then the key field is also flagged as sort
 
 ### Example configuration
 
@@ -100,4 +93,3 @@ This is a WIP; changes are being made all the time to improve the compatibility 
 The included packages provide data for arrivals and departures to/from an airport, which uses the aviationstack API. This api provides comprehensive live data from most airports in the world of the status of all flights amongst other flight information. There is a free option which provides a maximum of 500 calls per month or you can buy more.
 
 To obtain an aviationstack api to embded in the config, sign up at https://www.aviationstack.com and then collect the API key. Use the dashboard provided to track your API usage.
-
