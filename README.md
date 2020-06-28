@@ -13,6 +13,8 @@ The module can obtain data from a URL, a local file or the output from another p
 ### Example
 ![Example of MMM-Provider-JSON output being displayed through the MMM-Consumer-Flights module](images/screenshot.png?raw=true "Example screenshot")
 
+Example of MMM-Provider-JSON output being displayed through the MMM-Consumer-Flights module
+
 ### Dependencies
 
 This module requires both MMM-FeedUtilities and MMM-ChartUtilies to be installed.
