@@ -20,8 +20,8 @@ Example of MMM-Provider-JSON output being displayed through the MMM-Consumer-Fli
 This module requires both MMM-FeedUtilities and MMM-ChartUtilies to be installed.
 
 	Before installing this module;
-		use https://github.com/TheBodger/MMM-ChartUtilities to setup the MMM-Chart... dependencies and  install all modules.
-		use https://github.com/TheBodger/MMM-FeedUtilities to setup the MMM-Feed... dependencies and  install all modules.
+		Install and then read README.md for https://github.com/TheBodger/MMM-ChartUtilities to setup the MMM-Chart... dependencies and  install all modules.
+		Install and then read README.md for https://github.com/TheBodger/MMM-FeedUtilities to setup the MMM-Feed... dependencies and  install all modules.
 
 		npd install moment
 
@@ -56,7 +56,7 @@ Check out the example.config.js file for an example of a config that will produc
 | `consumerids`                | *Required* - <br><br> **Possible values:** Any consumerid(s) matching requesting consumer modules .<br> **Default value:** none
 | `id`                | *Required* - <br><br> **Possible values:** Any unique string identifying this instance of the module.<br> **Default value:** none
 | `datarefreshinterval`                | *Optional* - <br><br> **Possible values:** Any numeric value indicating the milliseconds to pause before checking for new data  .<br> **Default value:** 1000 * 60 * 60 * 24 (1 day)
-| `package`                | *Optional* - <br><br> **Possible values:** Any package name of a package in the packages folder excluding the .js suffix that contains any config entries for this module that will be merged with the config during run time<br> **Default value:** none
+| `package`                | *Optional* - <br><br> **Possible values:** Any package name of a package in the packages folder excluding the .js suffix that contains any config entries for this module that will overwrite and merged with the config during run time<br> **Default value:** none
 | `input`                | *Optional* - <br><br> **Possible values:** 'URL', path of a file, 'provider'(TODO) <br> **Default value:** 'URL'
 | `type`                | *Required* - <br><br> **Possible values:** Any string that will be sent in the Object field in the output<br> **Default value:** none
 | `baseurl`                | *Optional* - <br><br> **Possible values:** if required, a fully formed api URL, with any parameters included in the format {paramatername}<br> **Default value:** none
@@ -96,4 +96,4 @@ The included packages provide data for arrivals and departures to/from an airpor
 
 To obtain an aviationstack api to embded in the config, sign up at https://www.aviationstack.com and then collect the API key. Use the dashboard provided to track your API usage.
 
-
+The entries in the package file take precedence over the config, to ensure the option in the config is used (such as the input option) then remove the ebtry from the package.
