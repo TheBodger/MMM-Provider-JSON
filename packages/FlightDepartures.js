@@ -3,7 +3,7 @@ var package =
 	type: 'FlightDepartures',
 	baseurl: 'http://api.aviationstack.com/v1/flights?access_key={apikey}&dep_iata={airportcode}',
 	baseaddress: 'data',
-	input: 'URL',
+	//input: 'URL',
 	itemstype: 'array', 
 	fields: [ //mandatory
 		{ flight_status: { outputname: 'status' } },
@@ -19,6 +19,13 @@ var package =
 		{
 			estimated: {
 				address: 'departure',
+				inputtype: 't'
+			}
+		},
+		{
+			actual: {
+				address: 'arrival',
+				outputname:'landed',
 				inputtype: 't'
 			}
 		},
@@ -39,7 +46,6 @@ var package =
 		{
 			actual: {
 				address: 'departure',
-				outputname: 'landed',
 				inputtype: 't'
 			}
 		},

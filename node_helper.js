@@ -61,20 +61,6 @@ module.exports = NodeHelper.create({
 		this.logger = {};
 		this.logger[null] = LOG.createLogger("logs/logfile_Startup" + ".log", this.name);
 		this.queue = new QUEUE.queue("single", false);
-		//this.paginationend = false;
-		//this.pagoffset = 0; // maintains the current offset request to send to the api
-		this.pagdetails = {
-			paginationend: false,
-			offset: 0,
-			count: 0,
-			total: 0,
-			pagprocessed: 0,
-			pagcounter: 0, // total number of items downloaded // populated from a count variable or the actual number in the array of items returned
-			pagtoday: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 0, 0, 0, 0),
-			pagnow: new Date(),
-			pagallprocessed: false,
-			usearraylength: true,
-		}; 
 	},
 
 	stop: function () {
@@ -99,7 +85,7 @@ module.exports = NodeHelper.create({
 			//count, the number of entries to poll; set through the config value, pagcount
 
 			tempURL = tempURL.replace('{count}', config.pagcount);
-			tempURL = tempURL.replace('{offset}', this.pagdetails.pagoffset);
+			tempURL = tempURL.replace('{offset}', config.pagdetails.pagoffset);
 
 			tempURL = tempURL.replace('{countname}', config.pagcountname);
 			tempURL = tempURL.replace('{offsetname}', config.pagoffsetname);
@@ -128,14 +114,14 @@ module.exports = NodeHelper.create({
 			var packagename = 'modules/MMM-Provider-JSON/packages/' + tempconfig.package + '.js';
 			try {
 				eval(fs.readFileSync(packagename) + '');
-				Object.assign( tempconfig, package); //merge
+				Object.assign(tempconfig, package); //merge
 			}
 			catch (err) {
 				//failed so we report and continue
 
-				console.error("Reading package file:", tempconfig.package , ' returned error: ', JSON.stringify(err));
+				console.error("Reading package file:", tempconfig.package, ' returned error: ', JSON.stringify(err));
 			}
-        }
+		}
 
 		//build the input details
 
@@ -159,7 +145,7 @@ module.exports = NodeHelper.create({
 		//find any sort values and populate the sort control arrays
 		//if key not specified then make first field the key field
 		//if inputtype not set make it 's'
-		
+
 		var keyfound = false;
 		var sorting = false;
 		var sortkeys = [];
@@ -174,13 +160,14 @@ module.exports = NodeHelper.create({
 			tempconfig.fields[index]['fieldname'] = fieldname;
 
 			tempconfig.fields[index]['outputname'] = fieldparams.outputname;
+			tempconfig.fields[index]['default'] = fieldparams.default;
 
 			if (fieldparams.outputname == null) { tempconfig.fields[index]['outputname'] = fieldname; }
 
 			tempconfig.fields[index].fieldtype = fieldparams.inputtype;
 
 			if (fieldparams.inputtype == null) {
-				tempconfig.fields[index].fieldtype = 's'; 
+				tempconfig.fields[index].fieldtype = 's';
 			}
 
 			if (fieldparams.timestampformat != null) {
@@ -196,7 +183,7 @@ module.exports = NodeHelper.create({
 				sorting = true;
 				sortkeys.push(tempconfig.fields[index]['outputname'])
 			}
-			
+
 		})
 
 		if (!keyfound) {
@@ -212,19 +199,19 @@ module.exports = NodeHelper.create({
 		tempconfig['sortkeys'] = sortkeys;
 
 		//fields: [],		// an array of field definitions 
-							// field definitions are in the format of (|entry is optional|)
-							// {fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,outputname:''|,|sort:true|}}
-							// fieldname is  the  fieldname of the input field in the input data
-							// address is optional, if not specified then the data is extracted from the base address level
-							// fieldtype can be 'n', 's', 'b', 't'
-							// n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric 
-							// s = string, the input is converted to string if not string for output
-							// b = boolean, the input is converted to true/false for output
-							// t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
-							//	timestamp can includes a format to help the conversion of the input to the output
-							// key indicates that this field should be used for the subject entry within the output, if not specificed then the first entry is the key, the key is the highest level to use if the data is sorted
-							// outputname is the name to use for the field in output, if not specified the fieldname is used
-							// sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array
+		// field definitions are in the format of (|entry is optional|)
+		// {fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,outputname:''|,|sort:true|}}
+		// fieldname is  the  fieldname of the input field in the input data
+		// address is optional, if not specified then the data is extracted from the base address level
+		// fieldtype can be 'n', 's', 'b', 't'
+		// n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric 
+		// s = string, the input is converted to string if not string for output
+		// b = boolean, the input is converted to true/false for output
+		// t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
+		//	timestamp can includes a format to help the conversion of the input to the output
+		// key indicates that this field should be used for the subject entry within the output, if not specificed then the first entry is the key, the key is the highest level to use if the data is sorted
+		// outputname is the name to use for the field in output, if not specified the fieldname is used
+		// sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array
 
 		//convert to keys for JSON Extraction
 
@@ -234,19 +221,30 @@ module.exports = NodeHelper.create({
 
 		tempconfig.rootkey = tempconfig.baseaddress;
 
-		//store a local copy so we dont have keep moving it about
-
-		providerstorage[moduleinstance] = { config: tempconfig, trackingfeeddates: [] };
-
 		this.outputarray = [];
 
 		//pagination and filtering
 
+		var pagdetails = {
+			paginationend: false,
+			offset: 0,
+			count: 0,
+			total: 0,
+			pagoffset: 0,
+			pagprocessed: 0,
+			pagcounter: 0, //the number of api calls
+			pagcount: 0, // total number of items downloaded // populated from a count variable or the actual number in the array of items returned
+			pagtoday: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 0, 0, 0, 0).getTime(),
+			pagnow: new Date(),
+			pagallprocessed: false,
+			usearraylength: true,
+		};
+
 		//if some fields are entered as '' they are converted to null to simplify testing downstream
 
-		if (!tempconfig.pagination) { this.pagdetails.paginationend = true;} //we force a true situation to process data after processfeed
+		if (!tempconfig.pagination) { pagdetails.paginationend = true; } //we force a true situation to process data after processfeed
 
-		this.pagdetails.usearraylength = true;
+		pagdetails.usearraylength = true;
 
 		tempconfig.pagfields.forEach(function (pagfield, index) {
 
@@ -261,9 +259,17 @@ module.exports = NodeHelper.create({
 				tempconfig.pagfields[index]['outputname'] = fieldname;
 			}
 
-			if (tempconfig.pagfields[index].outputname == 'count') { self.pagdetails.usearraylength = false;}
+			if (tempconfig.pagfields[index].outputname == 'count') { pagdetails.usearraylength = false; }
 
 		})
+
+		if (tempconfig.pagcriteria == null) { tempconfig.pagcriteria = '%count%==%total%'; }
+
+		tempconfig['pagdetails'] = pagdetails;
+
+		//store a local copy so we dont have keep moving it about
+
+		providerstorage[moduleinstance] = { config: tempconfig,  trackingfeeddates: [] };
 
 	},
 
@@ -341,7 +347,6 @@ module.exports = NodeHelper.create({
 
 			var jsonarray = utilities.getkeyedJSON(inputjson, JSONconfig.config.rootkey);
 
-
 			//check to see if we have an actual error to report
 
 			if (jsonerror != null) {
@@ -369,9 +374,11 @@ module.exports = NodeHelper.create({
 
 					if (pagfield[pagfield.fieldname].address != null) { dotaddress = pagfield[pagfield.fieldname].address + '.' + dotaddress; }
 
-					self.pagdetails[pagfield[pagfield.fieldname].outputname] = utilities.getkeyedJSON(pagmeta, dotaddress);
+					JSONconfig.config.pagdetails[pagfield[pagfield.fieldname].outputname] = utilities.getkeyedJSON(pagmeta, dotaddress);
 
 				})
+
+				JSONconfig.config.pagdetails.pagcounter += 1; // the number of calls to the api
 
 			}
 
@@ -461,28 +468,35 @@ module.exports = NodeHelper.create({
 		//otherwise we call processfeeds again
 
 		//if the count field variable isn't defined, then we use the number of items returned
-		
-		if (this.pagdetails.usearraylength) {
-			this.pagdetails.pagcounter += jsonarray.length;
+
+		if (config.pagdetails.usearraylength) {
+			config.pagdetails.pagcount += jsonarray.length;
 		}
 		else {
-			this.pagdetails.pagcounter += this.pagdetails.count;
+			config.pagdetails.pagcount += config.pagdetails.count;
+		}
+
+		//if total available isnt returned from API, then use an array of 0 to indicate the end
+
+		if (config.pagdetails.total == null && jsonarray.length == 0) {
+
+			config.pagdetails.total = config.pagdetails.pagcount;
 		}
 
 		for (var idx = 0; idx < jsonarray.length; idx++) {
 
 			var processthisitem = true; //drop items not meeting any validation rules
-			var tempitem = {object:config.type};
+			var tempitem = { object: config.type };
 
 			const item = jsonarray[idx];
 
-			config.fields.forEach( function(field) {
+			config.fields.forEach(function (field) {
 
-			//depending on the field type we need to validate and convert
+				//depending on the field type we need to validate and convert
 
 				var dotaddress = field.fieldname;
 
-				if (field[field.fieldname].address != null) { dotaddress = field[field.fieldname].address + '.' + dotaddress;}
+				if (field[field.fieldname].address != null) { dotaddress = field[field.fieldname].address + '.' + dotaddress; }
 
 				var validatedfield = self.validateconvertfield(field, utilities.getkeyedJSON(item, dotaddress));//extract using a dotnotation key
 
@@ -506,32 +520,36 @@ module.exports = NodeHelper.create({
 
 				//we check now if we should include this item Dependant on filtering
 
-				if (this.filterkeep(config,tempitem)) { this.outputarray.push(tempitem); }
+				if (this.filterkeep(config, tempitem)) {
+					this.outputarray.push(tempitem);
+				}
 
 			}
-				
+
 		}  //end of process loop - input array
 
 		// if paginating, and not end criteria met, we call processfeeds again
 
 		if (config.pagination) {
-			this.pagdetails.pagoffset = this.pagdetails.pagcounter;
-			this.pagdetails.paginationend = this.checkendofpagination(config, tempitem);
+			config.pagdetails.pagoffset = config.pagdetails.pagcount;
+			config.pagdetails.paginationend = this.checkendofpagination(config, tempitem);
 		}
 
-		if (!this.pagdetails.paginationend) {
+		if (!config.pagdetails.paginationend) {
 			this.processfeeds(moduleinstance, providerid);
 		}
 		else { //we are finished at the last check so we go to sorting and sending 
 
-			if (config.sorting) { //carry out multi level sort
+			if (config.sorting && this.outputarray.length > 0) { //carry out multi level sort
+
+				JSONutils.putJSON("./presort" + config.filename, this.outputarray);
 
 				var sortutility = new utilities.mergeutils();
 
 				sortutility.preparesort('sortme', this.outputarray[0], config.sortkeys, false);
-				JSONutils.putJSON("./" + "B" + config.filename, this.outputarray);
+				
 				this.outputarray = sortutility.sortset(this.outputarray);
-				JSONutils.putJSON("./" + "A" + config.filename, this.outputarray);
+				
 			}
 
 			if (config.filename == null) {
@@ -562,19 +580,130 @@ module.exports = NodeHelper.create({
 
 		//if filter is true, then apply the criteria to the current item
 
+		if (config.filter) { 
 
+			var tempcriteria = this.replacevariables(config.filcriteria, config.fields, tempitem, config.pagdetails);
 
-		return true;
+			try {
+				var result = eval(tempcriteria);
+			}
+			catch (err) {
+				console.error("Attempting to eval the filter criteria, failed with error");
+				console.error(err.message);
+				console.error("Criteria: " + tempcriteria);
+				return false;
+			}
+
+			return result;
+
+		}
+
+		else {
+
+			return true;
+
+		}
 
 	},
 
 	checkendofpagination: function (config, currentitem) {
 
+		//checks that the criteria presented has or has not been met
+		//if not criteria is present then stop when the count = total
 
-		asrfg alkfslk ajflsg lfsj glkjdsf lajl dsfjlklakj g
+		//pagcriteria: '%count%==%total%',
 
-		return false; // force not end of pagination
+		//1st replace all the variables with the actual values
+
+		var tempcriteria = this.replacevariables(config.pagcriteria,config.fields,null,config.pagdetails);
+
+		var result = eval(tempcriteria);
+
+		return result;
     },
+
+
+	replacevariables: function (conditionstring,fields,itemdata,pagdetails) {
+
+		//split the string to find all %delimited% variables
+
+		let regexp = new RegExp('\%(.*?)\%', 'g');
+		let conditionvariables = [...conditionstring.match(regexp)];
+
+		var tmpcondition = conditionstring;
+
+		var variablecount = conditionvariables.length;
+
+		if (conditionvariables.indexOf('%counter%') > -1) {
+			tmpcondition = tmpcondition.replace('%counter%', pagdetails.pagcounter);
+			variablecount -= 1;
+		}
+		if (conditionvariables.indexOf('%returned%') > -1) {
+			tmpcondition = tmpcondition.replace('%returned%', pagdetails.pagcount);
+			variablecount -= 1;
+		}
+		if (conditionvariables.indexOf('%today%') > -1) {
+			tmpcondition = tmpcondition.replace('%today%', pagdetails.pagtoday);
+			variablecount -= 1;
+		}
+		if (conditionvariables.indexOf('%now%') > -1) {
+			tmpcondition = tmpcondition.replace('%now%', new Date().getTime());
+			variablecount -= 1;
+		}
+
+		//look for variables returned from the meta data:
+
+		if (variablecount > 0) {
+
+			if (conditionvariables.indexOf('%total%') > -1) {
+				tmpcondition = tmpcondition.replace('%total%', pagdetails.total);
+				variablecount -= 1;
+			}
+
+			if (conditionvariables.indexOf('%offset%') > -1) {
+				tmpcondition = tmpcondition.replace('%offset%', pagdetails.offset);
+				variablecount -= 1;
+			}
+
+			if (conditionvariables.indexOf('%count%') > -1) {
+				tmpcondition = tmpcondition.replace('%count%', pagdetails.count);
+				variablecount -= 1;
+			}
+		}
+
+		if (variablecount > 0) {
+
+			//and finally look for any defined in fields
+			//look for any matching output fields
+			//if the data provided is null then we need to use any default values defined
+			//otherwise we match on the data
+
+			fields.forEach(function (field, index) {
+
+				if (variablecount > 0) {
+
+					if (conditionvariables.indexOf('%' + field.outputname + '%') > -1) {
+
+						if (itemdata == null) {
+							tmpcondition = tmpcondition.replace('%' + field.outputname + '%', field.default);
+						} else {
+							tmpcondition = tmpcondition.replace('%' + field.outputname + '%', itemdata[field.outputname]);
+						}
+
+						variablecount -= 1;
+
+					}
+
+				}
+
+			})
+
+		}
+
+		return tmpcondition;
+
+	},
+
 
 	validateconvertfield: function (fieldconfig, value) {
 

@@ -7,15 +7,21 @@ var package =
 	input:'URL',
 	fields: [//mandatory
 		{ flight_status: { outputname: 'status' } },
-		{ terminal: { address: 'departure' } },
-		{ gate: { address: 'departure' } },
-		{ delay: { address: 'departure' } },
-		{ scheduled: { address: 'departure', inputtype: 't', sort: true } },
-		{ estimated: { address: 'departure', inputtype: 't' } },
-		{ actual: { address: 'departure', inputtype: 't' } },
+		{ terminal: { address: 'arrival' } },
+		{ gate: { address: 'arrival' } },
+		{ delay: { address: 'arrival' } },
+		{ scheduled: { address: 'arrival', inputtype: 't', sort: true } },
+		{ estimated: { address: 'arrival', inputtype: 't' } },
+		{ actual: { address: 'arrival', inputtype: 't' } },
+		{
+			actual: {
+				address: 'arrival',
+				outputname: 'landed',
+				inputtype: 't'
+			}
+		},
 		{ iata: { address: 'arrival', key: true, outputname: 'subject' } }, //as this is the key it will be output as subject
 		{ iata: { address: 'departure', outputname: 'remoteairport' } },
-		{ actual: { address: 'arrival', outputname: 'landed', inputtype: 't' } },
 		{ name: { address: 'airline', outputname: 'airline' } },
 		{ iata: { address: 'airline', outputname: 'airlineiata' } },
 		{ icao: { address: 'airline', outputname: 'airlineicao' } },

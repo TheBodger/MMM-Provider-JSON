@@ -108,7 +108,7 @@ Module.register("MMM-Provider-JSON", {
 							
 							//variables can be taken from the fields defined in pagfields or the internal ones of:
 							//counter, the number of calls to the API
-							//processed, the number of entries within arrays that have been processed
+							//returned, the total number of entries returned in the arrays
 							//today, a timestamp of today at 1 second after midnight
 							//now, a timestamp created at the point of checking
 							//examples (%processed%==%total%) (%processed%=%max%) where max is defined in fields with a default value
