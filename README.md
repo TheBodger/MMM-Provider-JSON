@@ -97,4 +97,4 @@ The included packages provide data for arrivals and departures to/from an airpor
 
 To obtain an aviationstack api to embded in the config, sign up at https://www.aviationstack.com and then collect the API key. Use the dashboard provided to track your API usage.
 
-The entries in the package file take precedence over the config, to ensure the option in the config is used (such as the input option) then remove the ebtry from the package.
+The entries in the package file take precedence over the config, to ensure the option in the config is used (such as the input option) then remove the entry from the package.
