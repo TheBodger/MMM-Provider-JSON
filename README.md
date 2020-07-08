@@ -70,7 +70,7 @@ Check out the example.config.js file for an example of a config that will produc
 ### Field definitions
 
 	field definitions are in the format: (|entry is optional|)
-	{fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,|outputname:''|,|sort:true|}}
+	{fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,|outputname:''|,|sort:true|,|default:''|}}
 		fieldname is  the  fieldname of the input field in the input data
 		address is optional, if not specified then the data is extracted from the base address level
 		fieldtype can be 'n', 's', 'b', 't'
@@ -79,7 +79,7 @@ Check out the example.config.js file for an example of a config that will produc
 			b = boolean, the input is converted to true/false for output
 			t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
 				timestamp can includes a format to help the conversion of the input to the output
-		key indicates that this field should be used for the subject entry within the output, if not specificed then the first entry is the key, the key is the highest level to use if the data is sorted
+		key indicates that this field should be used for the subject entry within the output, if not specified then the first entry is the key, the key is the highest level to use if the data is sorted
 		outputname is the name to use for the field in output, if not specified the fieldname is used
 		sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array
 		default can be used to provide the variable with a default value that can be used as if it is a literal for criteria validation 
