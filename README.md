@@ -95,7 +95,7 @@ This is a WIP; changes are being made all the time to improve the compatibility 
 
 The included packages provide data for arrivals and departures to/from an airport, which uses the aviationstack API. This api provides comprehensive live data from most airports in the world of the status of all flights amongst other flight information. There is a free option which provides a maximum of 500 calls per month or you can buy more.
 
-The packages ending in Pag include pagination and filter options that will ensure all the available data for any airport is pulled back, and only flights scheduled in the last 48 hours or in the future are included.
+The packages ending in Pag include pagination and filter options that will ensure all the available data for any airport is pulled back, and only flights scheduled in the last 2 hours or in the future are included.
 
 To obtain an aviationstack api to embded in the config, sign up at https://www.aviationstack.com and then collect the API key. Use the dashboard provided to track your API usage.
 
