@@ -8,7 +8,7 @@
  */
 
 
-//todo: add a package option where the fields definiton can be pulled from an external package (i.e. flight arrival, flighdeparture)
+//todo: change name of packages folder / visual studio doesn't recognise any entries
 
 var startTime = new Date();
 
