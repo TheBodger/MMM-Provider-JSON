@@ -215,6 +215,8 @@ Module.register("MMM-Provider-JSON", {
 
 	socketNotificationReceived: function (notification, nhpayload) {
 
+		Log.log(this.name + " received a socket notification: " , notification , nhpayload);
+
 		// as there is only one node helper for all instances of this module
 		// we have to filter any responses that are not for us by checking this.identifier
 
@@ -301,6 +303,7 @@ Module.register("MMM-Provider-JSON", {
 					fdp.source = nhpayload.source;
 					fdp.payload = payload.stuffitems;
 
+					Log.log(this.name + " sending a notification: ", fdp.consumerid, fdp.providerid, payload.stuffitems.length);
 					this.sendNotification('PROVIDER_DATA', fdp);
 				}
 
