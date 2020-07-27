@@ -55,6 +55,7 @@ Check out the example.config.js file for an example of a config that will produc
 | `text`                | *Optional* - <br><br> **Possible values:** Any string.<br> **Default value:** The Module name
 | `consumerids`                | *Required* - <br><br> **Possible values:** Any consumerid(s) matching requesting consumer modules .<br> **Default value:** none
 | `id`                | *Required* - <br><br> **Possible values:** Any unique string identifying this instance of the module.<br> **Default value:** none
+| `initialdelay`                | *Optional* - <br><br> **Possible values:** Any numeric value indicating the milliseconds to delay before the module starts checking for new data  .<br> **Default value:** none
 | `datarefreshinterval`                | *Optional* - <br><br> **Possible values:** Any numeric value indicating the milliseconds to pause before checking for new data  .<br> **Default value:** 1000 * 60 * 60 * 24 (1 day)
 | `package`                | *Optional* - <br><br> **Possible values:** Any package name of a package in the packages folder excluding the .js suffix that contains any config entries for this module that will overwrite and merged with the config during run time<br> **Default value:** none
 | `input`                | *Optional* - <br><br> **Possible values:** 'URL', path of a file, 'provider'(TODO) <br> **Default value:** 'URL'
@@ -99,4 +100,70 @@ The packages ending in Pag include pagination and filter options that will ensur
 
 To obtain an aviationstack api to embded in the config, sign up at https://www.aviationstack.com and then collect the API key. Use the dashboard provided to track your API usage.
 
-The entries in the package file take precedence over the config, to ensure the option in the config is used (such as the input option) then remove the entry from the package.
+The entries in the package file take precedence over the config, to ensure the option in the config is used (such as the input option) then remove the entry from the package file.
+
+### initialdelay
+
+The initialdelay option can be used to enable multiple providers in a config to send data to a consumer in a staggered fashion. 
+
+For example, if you wanted to send arrivals information from multiple airports at 20 minute intervals on an hourly cycle to a single flights module, then initialdelay can be used as follows:
+
+provider1, initialdelay 0 milliseconds, airport LHR, datarefreshinterval 1000 * 60 * 60 milliseconds
+provider2, initialdelay 1000*60*20 milliseconds, airport LGW, datarefreshinterval 1000 * 60 * 60 milliseconds
+provider3, initialdelay 1000*60*40 milliseconds, airport STN, datarefreshinterval 1000 * 60 * 60 milliseconds
+
+
+The flight module would see data as follows:
+
+@ 0 milliseconds:			0 minutes:	LHR Data
+@ 1000*60*20 milliseconds: 20 minutes:	LGW Data
+@ 1000*60*40 milliseconds: 40 minutes:	STN Data
+
+then as the data refreshes every 1000 * 60 * 60 milliseconds (1 hour)
+
+@60 minutes:	LHR Data
+@80 minutes:	LGW Data
+@100 minutes:	STN Data
+
+repeating each hour
+
+example config:
+
+```
+		{
+			module: "MMM-Provider-JSON",
+			config: {
+				consumerids: ["arrivals",],
+				initialdelay: 0, //wait 0 minutes before first data call
+				datarefreshinterval:1000*60*60, //then repeat every 60 minutes
+				id: 'FlightArrivalsLHR',
+				package: 'FlightArrivals',
+				urlparams: { apikey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxx', airportcode: 'LHR' },
+			}
+		},
+		{
+			module: "MMM-Provider-JSON",
+			config: {
+				consumerids: ["arrivals",],
+				initialdelay: 1000 * 60 * 20, //wait 20 minutes before first data call
+				datarefreshinterval: 1000 * 60 * 60, //then repeat every 60 minutes
+				id: 'FlightArrivalsSTN',
+				package: 'FlightArrivals',
+				urlparams: { apikey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', airportcode: 'STN' },
+			}
+		},
+		{
+			module: "MMM-Provider-JSON",
+			config: {
+				consumerids: ["arrivals",],
+				initialdelay: 1000 * 60 * 40, //wait 40 minutes before first data call
+				datarefreshinterval: 1000 * 60 * 60, //then repeat every 60 minutes
+				id: 'FlightArrivalsLGW',
+				package: 'FlightArrivals',
+				urlparams: { apikey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', airportcode: 'LGW' },
+			}
+		},
+		{ module: "MMM-Consumer-Flights", position: "top_center", config: { id: "arrivals", icon: true } },
+```
+
+Other parameters can be changed for each of the providers, for example an API or even the entire source of the data.

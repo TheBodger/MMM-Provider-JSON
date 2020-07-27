@@ -42,6 +42,7 @@ Module.register("MMM-Provider-JSON", {
 		text: "MMM-Provider-JSON",
 		consumerids: ["MMFD1"], // the unique id of the consumer(s) to listen out for
 		id: "MMPJ1", //the unique id of this provider
+		initialdelay: null, //milliseconds to pause the module before checking for new data the first time, see example config in readme for an example
 		datarefreshinterval: 1000 * 60 * 60 * 24,	//milliseconds to pause before checking for new data // common timer for all consumers // 
 													// adjust to ensure quota not breached on restricted aPi call limits
 		input:'URL',		// either 'URL' (default), 'provider', 'filename'
@@ -131,7 +132,18 @@ Module.register("MMM-Provider-JSON", {
 
 		Log.log(this.name + ' is started!');
 		
-		providerstorage[this.config.id] = {'trackingconsumerids': [], 'trackingStuff': {} }
+		providerstorage[this.config.id] = { 'trackingconsumerids': [], 'trackingStuff': {} }
+
+		//initialdelay processing
+
+		if (this.config.initialdelay == null) {
+			this.config.initialdelay = 0;
+		}
+
+		if (parseInt(this.config.initialdelay, 10) == NaN) {
+			console.error(this.name, "Invalid initialdelay, not numeric integer in milliseconds:", this.config.initialdelay);
+			this.config.initialdelay = 0;
+        }
 
 		//tell node helper to store the config and display it's current status
 
@@ -190,16 +202,23 @@ Module.register("MMM-Provider-JSON", {
 			//now we need to use our nice little nodehelper to get us the stuff 
 			//- be aware this is very very async and we might hit twisty nickers
 
-			//initial request to get data
-			self.sendNotificationToNodeHelper("UPDATE", { moduleinstance: self.identifier, providerid: self.config.id });
+			//delay initialdelay milliseconds to pause before checking for new data
 
-			setInterval(function () {
+			setTimeout(function () {
 
-				//within this loop, we request an update from the node helper of any new data it has found
+				//initial request to get data;
 
-				self.sendNotificationToNodeHelper("UPDATE", { moduleinstance: self.identifier, providerid: self.config.id } );
+				self.sendNotificationToNodeHelper("UPDATE", { moduleinstance: self.identifier, providerid: self.config.id });
 
-			}, this.config.datarefreshinterval); //perform every ? milliseconds.
+				setInterval(function () {
+
+					//within this loop, we request an update from the node helper of any new data it has found
+
+					self.sendNotificationToNodeHelper("UPDATE", { moduleinstance: self.identifier, providerid: self.config.id });
+
+				}, self.config.datarefreshinterval); //perform every ? milliseconds.
+
+			}, self.config.initialdelay);
 
 		}
 
