@@ -109,15 +109,15 @@ The initialdelay option can be used to enable multiple providers in a config to 
 For example, if you wanted to send arrivals information from multiple airports at 20 minute intervals on an hourly cycle to a single flights module, then initialdelay can be used as follows:
 
 provider1, initialdelay 0 milliseconds, airport LHR, datarefreshinterval 1000 * 60 * 60 milliseconds<BR>
-provider2, initialdelay 1000*60*20 milliseconds, airport LGW, datarefreshinterval 1000 * 60 * 60 milliseconds<BR>
-provider3, initialdelay 1000*60*40 milliseconds, airport STN, datarefreshinterval 1000 * 60 * 60 milliseconds<BR>
+provider2, initialdelay 1000 * 60 * 20 milliseconds, airport LGW, datarefreshinterval 1000 * 60 * 60 milliseconds<BR>
+provider3, initialdelay 1000 * 60 * 40 milliseconds, airport STN, datarefreshinterval 1000 * 60 * 60 milliseconds<BR>
 
 
 The flight module would see data as follows:
 
 @ 0 milliseconds:			0 minutes:	LHR Data<BR>
-@ 1000*60*20 milliseconds: 20 minutes:	LGW Data<BR>
-@ 1000*60*40 milliseconds: 40 minutes:	STN Data<BR>
+@ 1000 * 60 * 20 milliseconds: 20 minutes:	LGW Data<BR>
+@ 1000 * 60 * 40 milliseconds: 40 minutes:	STN Data<BR>
 
 then as the data refreshes every 1000 * 60 * 60 milliseconds (1 hour)
 
