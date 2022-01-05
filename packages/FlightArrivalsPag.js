@@ -46,7 +46,8 @@ var package =
 	//if total available isn't returned from API, then use an array of 0 to indicate the end
 	filter: true,
 	//filcriteria: '%estimated%>=new Date(new Date(%today%).getTime() - (1000 * 60 * 60)).getTime()', //anything estimated to arrive today
-	filcriteria: '%estimated%>=new Date(new Date().getTime() - (1000 * 60 * 60 * 2)).getTime()', //anything estimated to arrive around now
+	filcriteria: '%estimated%>=new Date(new Date(%today%).getTime() - (1000 * 60 * 60)).getTime() && "%airlineicao%"=="RYR"', //anything estimated to arrive today AND complex other criteria
+	//filcriteria: '%estimated%>=new Date(new Date().getTime() - (1000 * 60 * 60 * 2)).getTime()', //anything estimated to arrive around now
 
 	//the dates are numeric unix ones, representing the local time at the airport of interest and held as UTC, no TZ and no DST indicated
 	//i.e. 15:00 in NY is 15:00 15:00 in Sydney is 15:00; 
