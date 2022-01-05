@@ -1,7 +1,7 @@
-/* global Module, MMM-ChartProvider-Finance */
+/* global Module, MMM-Provider-JSON */
 
 /* Magic Mirror
- * Module: MMM-ChartProvider-JSON
+ * Module: MMM-Provider-JSON
  *
  * By Neil Scott
  * MIT Licensed.
