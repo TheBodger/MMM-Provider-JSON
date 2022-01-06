@@ -2,7 +2,7 @@
 
 This magic mirror module is a MMM-Provider module that will extract specified data from a JSON feed and provide it to any requesting consumers in a defined JSON format.
 
-The module can obtain data from a URL, a local file or the output from another provider providing data in well formed JSON
+The module can obtain data from a URL, a local file or the output from another provider providing data is in well formed JSON
 
 ## Usage
 
@@ -89,6 +89,8 @@ Check out the example.config.js file for an example of a config that will produc
 ### Example configuration
 
 See example.config.js and the package FlightArrivals.js in the packages folder for a configuration that will return fleight departure data for an airport that is formatted to work with the WWW-Consumer-Flights module
+
+Note the example package includes a filter criteria: this is a flexible and powerful tool that enables the creation of complex filters that can use predefined values and any field values defined in the ouput stage of the data processing as required. The single filter can be used for example to restrict data based on date ranges, and / or values of specific fields -the filter must be written such that when it is evaluated, after all fields have their values substituted from each incoming record, it is valid javascript and returns either a true or false response
 
 ### Additional Notes
 
