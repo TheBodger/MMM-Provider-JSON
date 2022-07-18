@@ -11,7 +11,7 @@ const moduleruntime = new Date();
 
 //this loads and formats JSON feeds from a specified source into extended NDTF items, depending on its config when called to from the main module
 
-//TODO 
+//TODO
 
 //to minimise activity, it will track what data has been already sent back to the module
 //and only send the delta each time, using the timestamp of the incoming data.
@@ -56,7 +56,7 @@ var payloadstuffitem = { stuffID: '', stuff: '' }
 module.exports = NodeHelper.create({
 
 	start: function () {
-		this.debug = false;
+		this.debug = true;
 		console.log(this.name + ' node_helper is started!');
 		this.logger = {};
 		this.logger[null] = LOG.createLogger("logs/logfile_Startup" + ".log", this.name);
@@ -92,7 +92,7 @@ module.exports = NodeHelper.create({
 
 		}
 
-		console.log("API URL:", tempURL);
+		if (this.debug) { console.log("API URL:", tempURL) };
 
 		return tempURL
 	},
@@ -146,6 +146,10 @@ module.exports = NodeHelper.create({
 		//if key not specified then make first field the key field
 		//if inputtype not set make it 's'
 
+		//if address is[] then set secondaryArray = true
+
+		tempconfig.fields['secondaryArray'] = false
+
 		var keyfound = false;
 		var sorting = false;
 		var sortkeys = [];
@@ -156,6 +160,8 @@ module.exports = NodeHelper.create({
 
 			var fieldname = Object.keys(field)[0];
 			var fieldparams = field[fieldname];
+
+			if (this.debug) { console.log('Field details:' + JSON.stringify(fieldparams)); }
 
 			tempconfig.fields[index]['fieldname'] = fieldname;
 
@@ -172,6 +178,18 @@ module.exports = NodeHelper.create({
 
 			if (fieldparams.timestampformat != null) {
 				tempconfig.fields[index]['timestampformat'] = fieldparams.timestampformat;
+			}
+
+			if (fieldparams.address != null) {
+
+				if (this.debug) {
+					console.log('>>' + fieldparams.address + "<>" + tempconfig.fields['secondaryArray'] + "<>" + fieldparams.address.substr(fieldparams.address.length - 2));
+				}
+
+				if (fieldparams.address.substr(fieldparams.address.length-2) == '[]') {
+					tempconfig.fields['secondaryArray'] = true
+					tempconfig.fields['secondArrayAddress'] = fieldparams.address.substr(0,fieldparams.address.length - 2)
+				}
 			}
 
 			if (fieldparams.key) { //add to the sort list, just in case, in first place
@@ -455,6 +473,14 @@ module.exports = NodeHelper.create({
 
 		//we process the JSON  here / 1 dataset
 
+		//jsonarray contains an array of base address data, that may contain other arrays
+		//when it is processed, a secondary array can be defined by having a field name of name[]
+		//if this is found then a loop is instigated, assuming all fields with name[] are at the same level
+
+		//an output record needs to be built initially and then data added for each loop
+
+		//aJSONObject.SiteRep.DV.Location.Period[0].Rep[0].D
+
 		const config = providerstorage[moduleinstance].config;
 
 		var sourcetitle = feed.sourcetitle;
@@ -483,50 +509,142 @@ module.exports = NodeHelper.create({
 			config.pagdetails.total = config.pagdetails.pagcount;
 		}
 
-		for (var idx = 0; idx < jsonarray.length; idx++) {
+		if (this.debug) {
+			console.log("second array:" + config.fields.secondaryArray);
+		}
+
+		for (var idx = 0; idx < jsonarray.length; idx++) { //initial data array loop
+
+			const item = jsonarray[idx];
 
 			var processthisitem = true; //drop items not meeting any validation rules
 			var tempitem = { object: config.type };
 
-			const item = jsonarray[idx];
+			if (!config.fields.secondaryArray) {
 
-			config.fields.forEach(function (field) {
+				config.fields.forEach(function (field) { // process each field
 
-				//depending on the field type we need to validate and convert
+					var dotaddress = field.fieldname;
 
-				var dotaddress = field.fieldname;
+					if (field[field.fieldname].address != null) { dotaddress = field[field.fieldname].address + '.' + dotaddress; }
 
-				if (field[field.fieldname].address != null) { dotaddress = field[field.fieldname].address + '.' + dotaddress; }
+					if (this.debug) {
+						console.log(JSON.stringify(item) + '<<>>' + dotaddress);
+					}
 
-				var validatedfield = self.validateconvertfield(field, utilities.getkeyedJSON(item, dotaddress));//extract using a dotnotation key
+					var validatedfield = self.validateconvertfield(field, utilities.getkeyedJSON(item, dotaddress));//extract using a dotnotation key
 
-				if (validatedfield.valid) {
-					if (field.key) {
-						tempitem['subject'] = validatedfield.value;
+					if (this.debug) {
+						console.log('validated field: ' + validatedfield.valid + ' value:' + validatedfield.value);
+					}
+
+					if (validatedfield.valid) {
+						if (field.key) {
+							tempitem['subject'] = validatedfield.value;
+						}
+						else {
+							tempitem[field.outputname] = validatedfield.value;
+						}
 					}
 					else {
-						tempitem[field.outputname] = validatedfield.value;
+						processthisitem = false;
 					}
+
+					
+				})
+
+				if (processthisitem) {
+
+					//filtering
+
+					//we check now if we should include this item Dependant on filtering
+
+					if (this.filterkeep(config, tempitem)) {
+						this.outputarray.push(tempitem);
+					}
+
 				}
-				else {
-					processthisitem = false;
-				}
+			}
 
-			})
+			else {
 
-			if (processthisitem) {
+				for (var idx2 = 0; idx2 < item[config.fields.secondArrayAddress].length; idx2++) { //secondary data array loop derived from the address
 
-				//filtering
+					var tempitem = { object: config.type }; //should ensure a new item is created and data is correct when added to output, not replicated last item
 
-				//we check now if we should include this item Dependant on filtering
+					config.fields.forEach(function (field) { // process each field
 
-				if (this.filterkeep(config, tempitem)) {
-					this.outputarray.push(tempitem);
+						//depending on the field type we need to validate and convert
+
+						if (this.debug) {
+							console.log("Field details:" + field.fieldname + " " + field[field.fieldname].address);
+						}
+
+						var dotaddress = field.fieldname; 
+
+						if (field[field.fieldname].address != null) {
+
+							dotaddress = field[field.fieldname].address + '.' + field.fieldname; 
+
+							if (field[field.fieldname].address.substr(field[field.fieldname].address.length - 2) == '[]')
+							{
+
+								//dotaddress = config.fields.secondArrayAddress + ".[" + idx2 + "]" + '.' + field.fieldname //pseudo dot address in format array.idx.name to work with the get keyed json
+								dotaddress = config.fields.secondArrayAddress + "." + idx2 + '.' + field.fieldname //pseudo dot address in format array.idx.name to work with the get keyed json
+								secondArrayField = true
+
+							}
+
+						}
+
+						if (this.debug) {
+							console.log('Second array >>>>' + JSON.stringify(item) + '<<>>' + dotaddress);
+						}
+
+						var validatedfield = self.validateconvertfield(field, utilities.getkeyedJSON(item, dotaddress));//extract using a dotnotation key
+
+						if (this.debug) {
+							if (!validatedfield.value == null) {
+
+								console.log('validated field (isvalid): ' + field.fieldname + " (" + validatedfield.valid + ') value:' + validatedfield.value.value);
+							}
+						}
+
+						if (validatedfield.valid)
+						{
+							if (field.key)
+							{
+								tempitem['subject'] = validatedfield.value;
+							}
+							else
+							{
+								tempitem[field.outputname] = validatedfield.value;
+							}
+						}
+						else
+						{
+							processthisitem = false;
+						}
+					})
+
+					//here, if any data is invalid, either from primary or secondary loop, then we ignore it
+					if (processthisitem) {
+
+						//filtering
+
+						//we check now if we should include this item Dependant on filtering
+
+						if (this.filterkeep(config, tempitem)) {
+							this.outputarray.push(tempitem);
+						}
+
+					}
+
 				}
 
 			}
-
-		}  //end of process loop - input array
+		
+		}  //end of process loop - input array  //secondary loop situation
 
 		// if paginating, and not end criteria met, we call processfeeds again
 
@@ -703,7 +821,6 @@ module.exports = NodeHelper.create({
 		return tmpcondition;
 
 	},
-
 
 	validateconvertfield: function (fieldconfig, value) {
 
