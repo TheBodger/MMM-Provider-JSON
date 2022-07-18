@@ -62,7 +62,7 @@ Check out the example.config.js file for an example of a config that will produc
 | `type`                | *Required* - <br><br> **Possible values:** Any string that will be sent in the Object field in the output<br> **Default value:** none
 | `baseurl`                | *Optional* - <br><br> **Possible values:** if required, a fully formed api URL, with any parameters included in the format {paramatername}<br> **Default value:** none
 | `urlparams`                | *Optional* - <br><br> **Possible values:** if required, an array of  paramater names and values that will be embedded into the baseurl<br> **Default value:** none
-| `baseaddress`                | *Optional* - <br><br> **Possible values:** The JSON field from which all other data will be extracted in dot notation format. must point to an array if itemtype is array<br> **Default value:** none
+| `baseaddress`                | *Optional* - <br><br> **Possible values:** The JSON field from which all other data will be extracted in dot notation format. Must point to a JSON array if itemtype is array<br> **Default value:** none
 | `itemtype`                | *Optional* - <br><br> **Possible values:** Currently array<br> **Default value:** `array`
 | `fields`                | *Optional* - <br><br> **Possible values:** An array of field definitions<br> **Default value:** none
 | `filename`                | *Optional* - <br><br> **Possible values:** The path and filename where the output JSON object can be wrritten to for debug usage<br> **Default value:** none
