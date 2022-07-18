@@ -2,7 +2,7 @@
 
 This magic mirror module is a MMM-Provider module that will extract specified data from a JSON feed and provide it to any requesting consumers in a defined JSON format.
 
-The module can obtain data from a URL, a local file or the output from another provider providing data is in well formed JSON
+The module can obtain data from a URL, a local file or the output from another provider providing data in well formed JSON
 
 ## Usage
 
@@ -62,7 +62,7 @@ Check out the example.config.js file for an example of a config that will produc
 | `type`                | *Required* - <br><br> **Possible values:** Any string that will be sent in the Object field in the output<br> **Default value:** none
 | `baseurl`                | *Optional* - <br><br> **Possible values:** if required, a fully formed api URL, with any parameters included in the format {paramatername}<br> **Default value:** none
 | `urlparams`                | *Optional* - <br><br> **Possible values:** if required, an array of  paramater names and values that will be embedded into the baseurl<br> **Default value:** none
-| `baseaddress`                | *Optional* - <br><br> **Possible values:** The JSON field from which all other data will be extracted in dot notation format<br> **Default value:** none
+| `baseaddress`                | *Optional* - <br><br> **Possible values:** The JSON field from which all other data will be extracted in dot notation format. must point to an array if itemtype is array<br> **Default value:** none
 | `itemtype`                | *Optional* - <br><br> **Possible values:** Currently array<br> **Default value:** `array`
 | `fields`                | *Optional* - <br><br> **Possible values:** An array of field definitions<br> **Default value:** none
 | `filename`                | *Optional* - <br><br> **Possible values:** The path and filename where the output JSON object can be wrritten to for debug usage<br> **Default value:** none
@@ -71,9 +71,13 @@ Check out the example.config.js file for an example of a config that will produc
 ### Field definitions
 
 	field definitions are in the format: (|entry is optional|)
-	{fieldname:{|address:'dotnotation from the base'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,|outputname:''|,|sort:true|,|default:''|}}
-		fieldname is  the  fieldname of the input field in the input data
-		address is optional, if not specified then the data is extracted from the base address level
+	{fieldname:{|address:'dotnotation from the base|[]|'|,|inputtype:fieldtype|,|outputtype:fieldtype|,|key:true|,|outputname:''|,|sort:true|,|default:''|}}
+		fieldname is  the  fieldname of the input field in the input data.
+		address is optional, if not specified then the data is extracted from the base address level.  
+		If suffixed by [] then it there is a secondary array of values of 0 or more entries. A record will be produced by looping through the secondary array and adding any non array fields from the main array. See the metoffice package for an example. 
+		Currently only 1 subsequent level is supported and all fields with an secondary array address must have the same address
+		
+		!!These fields must come after none array fields, otherwise the data send to the consumer will be incomplete at best and corrupted at worst!!
 		fieldtype can be 'n', 's', 'b', 't'
 			n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric 
 			s = string, the input is converted to string if not string for output
@@ -88,9 +92,7 @@ Check out the example.config.js file for an example of a config that will produc
 
 ### Example configuration
 
-See example.config.js and the package FlightArrivals.js in the packages folder for a configuration that will return flight departure data for an airport that is formatted to work with the WWW-Consumer-Flights module
-
-Note the example package includes a filter criteria: this is a flexible and powerful tool that enables the creation of complex filters that can use predefined values and any field values defined in the ouput stage of the data processing as required. The single filter can be used, for example, to restrict data based on date ranges, and / or values of specific fields -the filter must be written such that when it is evaluated, after all fields have their values substituted from each incoming record, it is valid javascript and returns either a true or false response
+See example.config.js and the package FlightArrivals.js in the packages folder for a configuration that will return fleight departure data for an airport that is formatted to work with the WWW-Consumer-Flights module
 
 ### Additional Notes
 
@@ -167,5 +169,9 @@ example config:
 		},
 		{ module: "MMM-Consumer-Flights", position: "top_center", config: { id: "arrivals", icon: true } },
 ```
+
+Extracting Metoffice weather details example:
+
+https://www.metoffice.gov.uk/binaries/content/assets/metofficegovuk/pdf/data/datapoint_api_reference.pdf
 
 Other parameters can be changed for each of the providers, for example an API or even the entire source of the data.
