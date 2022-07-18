@@ -171,7 +171,18 @@ example config:
 ```
 
 Extracting Metoffice weather details example:
-
+```
+		{
+			module: "MMM-Provider-JSON",
+				config: {
+				consumerids: ["weatherConsumer",], //mandatory ID of the consumer receiving the data from the module
+				id: 'metofficeAscot', //mandatory unique ID
+				package: 'metofficeWeather', //name of the package that contains a standard set of config details
+				urlparams: { appID: 'met office app id', locationID: '350153' }, //from https://www.metoffice.gov.uk/services/data/datapoint/uk-locations-site-list-detailed-documentation
+				filename: 'metofficeweather.json', //the name of an output file containing the details sent to the consumer, for debug usage etc
+				}
+		},
+```
 https://www.metoffice.gov.uk/binaries/content/assets/metofficegovuk/pdf/data/datapoint_api_reference.pdf
 
 Other parameters can be changed for each of the providers, for example an API or even the entire source of the data.
