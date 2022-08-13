@@ -83,7 +83,8 @@ Check out the example.config.js file for an example of a config that will produc
 			s = string, the input is converted to string if not string for output
 			b = boolean, the input is converted to true/false for output
 			t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
-				timestamp can includes a format to help the conversion of the input to the output
+				timestamp can include a format to help the conversion of the input to the output (see examples)
+			d = time of day, in format hh:mm:ss or hh:mm - 24 hour clock, assumes UTC, any timezone adjustements should be made by the consuming module
 		key indicates that this field should be used for the subject entry within the output, if not specified then the first entry is the key, the key is the highest level to use if the data is sorted
 		outputname is the name to use for the field in output, if not specified the fieldname is used
 		sort indicates if this field should be included as a sort key, the sort order is always, key 1st and then any fields indicated as sort in the order they are entered in the fields array

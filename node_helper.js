@@ -825,11 +825,13 @@ module.exports = NodeHelper.create({
 	validateconvertfield: function (fieldconfig, value) {
 
 		// fieldtype can be 'n', 's', 'b', 't'
-		// n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric 
+		// n = numeric, the input is validated as numeric (converted to string if needed), the output is numeric
 		// s = string, the input is converted to string if not string for output
 		// b = boolean, the input is converted to true/false for output
 		// t = timestamp, the input is converted to a numeric unix format of time (equivalent of new Date(inputvalue).getTime()
 		//	timestamp can includes a format to help the conversion of the input to the output
+		//
+		// d = time of day, in format hh:mm:ss or hh:mm - 24 hour clock, assumes UTC, any timezone adjustments should be made by the consuming module
 
 		var result = { valid: true, value: value };
 
@@ -868,6 +870,17 @@ module.exports = NodeHelper.create({
 					result.value = moment(value).toDate().getTime();
 					return result;
 				}
+			}
+		}
+
+		//const date3 =  Date.UTC("1970", "00", "01", h, m, s);
+
+		var dte = "1970-00-01 " //zero indexed month
+
+		if (fieldconfig.fieldtype == 'd') { //can be hh:mm or hh:mm:dd
+			if (value.length == 8 || value.length == 4) {
+				result.value = new Date(Date.UTC(dte+value));
+				return result;
 			}
 		}
 
