@@ -875,11 +875,19 @@ module.exports = NodeHelper.create({
 
 		//const date3 =  Date.UTC("1970", "00", "01", h, m, s);
 
-		var dte = "1970-00-01 " //zero indexed month
+		var dte = "1970-01-01 " //zero indexed month
+
+		//var dte = "1970-01-01"
+		//var value = "09:43:10"
+		//var ts = value.split(":")
+		//var result = new Date(Date.UTC(Y, M, D, ts[0], ts[1], ts[2]));
+		//console.log(result.getTime())
 
 		if (fieldconfig.fieldtype == 'd') { //can be hh:mm or hh:mm:dd
 			if (value.length == 8 || value.length == 4) {
-				result.value = new Date(Date.UTC(dte+value));
+				var ts = value.split(":")
+				result.value = new Date(Date.UTC(1970,0,1,ts[0],ts[1],ts[2]));
+				result.value = result.value.getTime();
 				return result;
 			}
 		}
